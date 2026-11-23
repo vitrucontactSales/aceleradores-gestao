@@ -1,8 +1,48 @@
 <!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Início — Portal Aceleradores (protótipo)</title><link rel="stylesheet" href="common.css"></head><body>
-<main><div class="card"><h1 id="ola"></h1><div id="cards" class="row"></div></div></main>
+<main><div class="card"><h1 id="ola"></h1><div id="cards" class="row"></div></div><section class="card" id="cmp" hidden><style>#cmp label{display:inline-flex;flex-direction:row;align-items:center;gap:5px;margin:0;font-size:.88rem;text-transform:none;letter-spacing:0;font-weight:500;color:var(--ink)}#cmp input{width:auto;margin:0;padding:0}</style>
+<h2 style="margin:0 0 4px">Comparativo entre processos de vendas</h2>
+<p class="mut" style="margin:0 0 10px;font-size:.9rem">Cada linha é um processo, contado a partir do <b>dia 1</b> (início dele). Assim dá para ver se o processo atual está <b>acima ou abaixo</b> dos anteriores <b>no mesmo ponto</b> do calendário de vendas. Conta só matrículas do Acelerador (sem o Topo).</p>
+<div id="cmpK" class="row" style="gap:10px;margin-bottom:10px"></div>
+<div style="display:flex;flex-wrap:wrap;gap:14px;align-items:center;margin-bottom:6px;font-size:.88rem"><span id="cmpP"></span><span><label><input type="radio" name="cmpM" value="ac" checked> Acumulado (soma até o dia)</label> &nbsp; <label><input type="radio" name="cmpM" value="dia"> Matrículas por dia</label></span><label><input type="checkbox" id="cmpF"> Ver processos completos</label><span id="cmpR" class="mut" style="margin-left:auto;min-height:1.2em"></span></div>
+<div id="cmpC"></div>
+<div style="overflow:auto"><table id="cmpT" style="width:100%;border-collapse:collapse;font-size:.88rem;margin-top:8px"></table></div>
+<p class="mut" style="font-size:.8rem;margin:8px 0 0">Como ler: passe o mouse (ou o dedo) no gráfico para ver o valor de cada processo naquele dia. Linha mais alta = mais matrículas acumuladas no mesmo dia do processo. O processo atual (linha grossa) só vai até hoje.</p>
+</section></main>
 <script src="auth.js"></script><script src="common.js"></script><script>
 Auth.ready.then(()=>{const u=Auth.require();topo(u,'index.html');document.getElementById('ola').textContent='Olá, '+u.nome.split(' ')[0];
 const C={formulario:['Registrar matrícula','Formulário de registro com validação do número do candidato.','formulario.html'],dash:['Dashboard','Visão consolidada por gestor e consultor.','dashboard.html'],trat:['Aprovações','Aprovar ou reprovar matrículas; CPF do aluno e matrícula.','tratativas.html'],painel:['Painel de Vendas','Acelerador + Topo, metas e ciclos.','painel.html'],adm:[u.perfil==='gestor'?'Consultores':'Usuários',u.perfil==='gestor'?'Cadastrar e excluir consultores.':'Cadastrar, aprovar e excluir usuários.','admin.html']};
 const v={consultor:['formulario'],gestor:['formulario','dash','painel','trat','adm'],admin:['formulario','dash','painel','trat','adm']}[u.perfil];
 document.getElementById('cards').innerHTML=v.map(k=>`<a class="card" style="text-decoration:none;color:inherit" href="${C[k][2]}"><h2 style="color:var(--ac)">${C[k][0]}</h2><span class="mut">${C[k][1]}</span></a>`).join('')})
+</script><script>
+Auth.ready.then(async()=>{const u=Auth.require();if(u.perfil==='consultor')return;
+const SB='https://wfequjtoutpqvfyjdrvo.supabase.co/rest/v1/',KEY='sb_publishable_NYXnlMO9SZc4Sg3zxPCZtw_Uto0gecQ',H={apikey:KEY,Authorization:'Bearer '+KEY},$=i=>document.getElementById(i);
+const COR={0:'#b7791f',1:'#157347',2:'#7a4fb5',cur:'#0a4694'},nf=v=>Number(v).toLocaleString('pt-BR'),br=d=>d.slice(8)+'/'+d.slice(5,7),U=s=>Date.UTC(+s.slice(0,4),+s.slice(5,7)-1,+s.slice(8,10)),idx=(a,b)=>Math.round((U(b)-U(a))/864e5);
+const hoje=new Date(Date.now()-3*36e5).toISOString().slice(0,10);
+try{
+const cfg=(await(await fetch(SB+'painel_dados?chave=eq.config&select=valor',{headers:H})).json())[0];const cc=(cfg&&cfg.valor&&cfg.valor.ciclos)||{};
+const P=Object.entries(cc).filter(([n,v])=>/^\d{4}-\d{2}-\d{2}$/.test(v[0])&&/^\d{4}-\d{2}-\d{2}$/.test(v[1])&&v[0]<=v[1]).map(([n,v])=>({n,ini:v[0],fim:v[1],rot:n+'.'+v[1].slice(0,4),dias:idx(v[0],v[1])+1})).sort((a,b)=>a.ini<b.ini?-1:1);
+if(P.length<2)return;
+let ds=[],f=0;for(;;){const r=await fetch(SB+'aceleradores_matriculas?select=data_pagamento&excluido_em=is.null&data_pagamento=gte.'+P[0].ini+'&data_pagamento=lte.'+P[P.length-1].fim,{headers:{...H,Range:f+'-'+(f+999)}});if(!r.ok)throw 0;const j=await r.json();ds=ds.concat(j.map(x=>x.data_pagamento));if(j.length<1000)break;f+=1000}
+P.forEach((p,i)=>{p.atual=hoje>=p.ini&&hoje<=p.fim;p.len=p.atual?idx(p.ini,hoje)+1:p.dias;p.c=new Array(p.len).fill(0);ds.forEach(d=>{if(d>=p.ini&&d<=p.fim){const k=idx(p.ini,d);if(k<p.len)p.c[k]++}});let a=0;p.a=p.c.map(v=>a+=v);p.col=p.atual?COR.cur:COR[i%3]});
+const cur=P.find(p=>p.atual)||P[P.length-1],ant=P.filter(p=>p!==cur&&p.fim<cur.ini),sel=new Set(P.map(p=>p.n));
+const L=cur.len,at=p=>p.a[Math.min(L,p.len)-1];
+// resumo
+const m=ant.length?ant.reduce((s,p)=>s+at(p),0)/ant.length:0,dif=m?(at(cur)/m-1)*100:0;
+$('cmpK').innerHTML=[['Processo '+cur.rot+' — dia '+L,nf(at(cur)),'matrículas até hoje'],['Média dos anteriores no dia '+L,nf(Math.round(m)),ant.map(p=>p.n+': '+nf(at(p))).join(' · ')],['Diferença',(dif>=0?'+':'')+dif.toFixed(1).replace('.',',')+'%',dif>=0?'acima da média dos anteriores':'abaixo da média dos anteriores']].map(([a,b,c],i)=>'<div class="card" style="flex:1;min-width:190px;margin:0;padding:12px 14px"><div class="mut" style="font-size:.78rem;font-weight:600;text-transform:uppercase">'+a+'</div><div style="font-size:1.5rem;font-weight:700;color:'+(i===2?(dif>=0?'#157347':'#b42318'):'inherit')+'">'+b+'</div><div class="mut" style="font-size:.8rem">'+c+'</div></div>').join('');
+$('cmpP').innerHTML=P.map(p=>'<label style="margin-right:10px"><input type="checkbox" data-n="'+p.n+'" checked> <b style="color:'+p.col+'">● '+p.rot+'</b></label>').join('');
+$('cmpT').innerHTML='<tr style="text-align:left;color:var(--mut);border-bottom:1px solid var(--line)"><th>Processo</th><th>Período</th><th style="text-align:right">Dias</th><th style="text-align:right">No dia '+L+'</th><th style="text-align:right">Total</th><th style="text-align:right">Média/dia</th></tr>'+P.map(p=>'<tr style="border-bottom:1px solid var(--line)"><td><b style="color:'+p.col+'">● '+p.rot+'</b>'+(p.atual?' (em andamento)':'')+'</td><td>'+br(p.ini)+' a '+br(p.fim)+'</td><td style="text-align:right">'+(p.atual?p.len+' de '+p.dias:p.dias)+'</td><td style="text-align:right">'+nf(at(p))+'</td><td style="text-align:right">'+nf(p.a[p.len-1])+'</td><td style="text-align:right">'+(p.a[p.len-1]/p.len).toFixed(1).replace('.',',')+'</td></tr>').join('');
+function nice(mx){const s=Math.pow(10,Math.floor(Math.log10(mx||1))),r=mx/s,st=(r<=2?.5:r<=5?1:2)*s;return{st,top:Math.ceil(mx/st)*st}}
+function desenhar(){const modo=document.querySelector('input[name=cmpM]:checked').value,S=P.filter(p=>sel.has(p.n)),W=900,Ht=300,l=44,r=60,t=14,b=30,pw=W-l-r,ph=Ht-t-b,full=$('cmpF').checked,ser=p=>(modo==='ac'?p.a:p.c).slice(0,full?9999:L),X=Math.max(1,...S.map(p=>ser(p).length)),mx=Math.max(1,...S.map(p=>Math.max(...ser(p)))),y=nice(mx),sx=d=>l+pw*d/Math.max(1,X-1),sy=v=>t+ph-ph*v/y.top;
+let s='<svg viewBox="0 0 '+W+' '+Ht+'" style="width:100%;height:auto;display:block" role="img" aria-label="Matrículas por dia do processo, uma linha por processo" font-size="11" fill="#55636b">';
+for(let v=0;v<=y.top+1e-9;v+=y.st)s+='<line x1="'+l+'" x2="'+(W-r)+'" y1="'+sy(v)+'" y2="'+sy(v)+'" stroke="#dde3e6"/><text x="'+(l-6)+'" y="'+(sy(v)+4)+'" text-anchor="end">'+nf(v)+'</text>';
+const ev=Math.ceil(X/14);for(let d=0;d<X;d++)if(d%ev===0||d===X-1)s+='<text x="'+sx(d)+'" y="'+(Ht-10)+'" text-anchor="middle">'+(d+1)+'</text>';
+s+='<text x="'+l+'" y="'+(Ht-1)+'" font-size="10">dia do processo →</text>';
+S.forEach(p=>{const v=ser(p);s+='<polyline fill="none" stroke="'+p.col+'" stroke-width="'+(p.atual?3.2:1.8)+'" stroke-linejoin="round" points="'+v.map((q,d)=>sx(d)+','+sy(q)).join(' ')+'"/><circle cx="'+sx(v.length-1)+'" cy="'+sy(v[v.length-1])+'" r="3.5" fill="'+p.col+'"/><text x="'+(sx(v.length-1)+6)+'" y="'+(sy(v[v.length-1])+4)+'" fill="'+p.col+'" font-weight="700">'+p.n+'</text>'});
+s+='<line id="cmpV" y1="'+t+'" y2="'+(t+ph)+'" stroke="#98a2b3" stroke-dasharray="3 3" visibility="hidden"/><rect id="cmpH" x="'+l+'" y="'+t+'" width="'+pw+'" height="'+ph+'" fill="transparent"/></svg>';
+$('cmpC').innerHTML=s;const rc=$('cmpH'),vl=$('cmpV'),svg=rc.ownerSVGElement;
+const mv=e=>{const q=e.touches?e.touches[0]:e,pt=svg.getBoundingClientRect(),k=Math.max(0,Math.min(X-1,Math.round((q.clientX-pt.left)/pt.width*W>l?((q.clientX-pt.left)/pt.width*W-l)/pw*(X-1):0)));vl.setAttribute('x1',sx(k));vl.setAttribute('x2',sx(k));vl.setAttribute('visibility','visible');$('cmpR').innerHTML='<b>Dia '+(k+1)+'</b>: '+S.map(p=>'<span style="color:'+p.col+'">'+p.n+' = '+(k<ser(p).length?nf(ser(p)[k]):'—')+'</span>').join(' · ')};
+rc.addEventListener('mousemove',mv);rc.addEventListener('touchstart',mv,{passive:true});rc.addEventListener('touchmove',mv,{passive:true});rc.addEventListener('mouseleave',()=>{vl.setAttribute('visibility','hidden');$('cmpR').textContent=''})}
+document.getElementById('cmp').addEventListener('change',e=>{if(e.target.dataset&&e.target.dataset.n){e.target.checked?sel.add(e.target.dataset.n):sel.delete(e.target.dataset.n)}desenhar()});
+desenhar();$('cmp').hidden=false}catch(e){}});
 </script></body></html>
+ 
