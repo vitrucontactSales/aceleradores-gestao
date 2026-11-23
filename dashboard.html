@@ -11,7 +11,7 @@
 .ct{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:6px}.ct h2{margin:0}.ct span{font-size:.8rem;color:var(--mut)}
 svg.chart{width:100%;height:auto;display:block;overflow:visible}.chart text{font:11px var(--f);fill:#5b6678}.chart .gl{stroke:#e9ecf1;stroke-width:1}.chart .av{stroke:var(--hi);stroke-width:1.5;stroke-dasharray:5 4}.chart .avt{fill:#8a5a10;font-weight:650}
 .chart .hit{fill:transparent;cursor:crosshair}.chart .hit:hover,.chart .hit:focus{fill:rgba(29,59,139,.07);outline:none}
-.rank{list-style:none;margin:0;padding:0}.rank li{display:grid;grid-template-columns:22px minmax(150px,2.2fr) minmax(60px,1.2fr) 46px 50px;gap:10px;align-items:center;padding:9px 0;border-bottom:1px solid var(--line);font-size:.88rem}.rank li:last-child{border-bottom:0}
+.rank{list-style:none;margin:0;padding:0}.rank.sc{max-height:410px;overflow-y:auto;padding-right:4px}.rank li.hd{position:sticky;top:0;background:var(--surf);z-index:1;padding:6px 0;font-size:.72rem;font-weight:600;color:var(--mut);text-transform:uppercase;letter-spacing:.03em}.rank li.hd span:nth-child(n+4){text-align:right}.rank li{display:grid;grid-template-columns:22px minmax(150px,2.2fr) minmax(60px,1.2fr) 46px 50px;gap:10px;align-items:center;padding:9px 0;border-bottom:1px solid var(--line);font-size:.88rem}.rank li:last-child{border-bottom:0}
 .rank .n{color:#98a2b3;font-size:.78rem}.rank .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.rank .tr{height:6px;background:#eef1f6;border-radius:3px}.rank .tr i{display:block;height:6px;background:var(--ac);border-radius:3px;transition:width .5s cubic-bezier(.2,.8,.2,1)}.rank b{text-align:right;font-weight:650}.rank .pc{color:var(--mut);text-align:right;font-size:.8rem}
 .tbl-wrap{overflow:auto;max-height:560px;border:1px solid var(--line);border-radius:var(--r)}.tbl-wrap th{position:sticky;top:0;cursor:pointer;user-select:none}.tbl-wrap th[aria-sort]::after{content:attr(data-a);margin-left:6px;color:var(--ac)}.tbl-wrap td.num,.tbl-wrap th.num{text-align:right}
 details{margin-top:10px;font-size:.84rem}summary{cursor:pointer;color:var(--ac);font-weight:600}details table{margin-top:8px}
@@ -33,7 +33,7 @@ details{margin-top:10px;font-size:.84rem}summary{cursor:pointer;color:var(--ac);
 <section class="card"><div class="ct"><h2 id="t1">Matrículas por dia</h2><span id="t1s"></span></div><div id="c1"></div>
  <details><summary>Ver dados do gráfico</summary><div id="c1t"></div></details></section>
 <div class="grid2">
- <section class="card"><div class="ct"><h2>Consultores — do maior para o menor</h2><span id="rkS"></span></div><ol class="rank" id="rk"></ol></section>
+ <section class="card"><div class="ct"><h2>Consultores — do maior para o menor</h2><span id="rkS"></span></div><ol class="rank sc" id="rk"></ol></section>
  <section class="card"><div class="ct"><h2>Por gestor</h2><span>no período</span></div><ol class="rank" id="gs"></ol></section>
 </div>
 <section class="card"><div class="ct"><h2>Evolução semanal</h2><span>últimas 12 semanas · a semana atual (tracejada) ainda está em andamento</span></div><div id="c2"></div></section>
@@ -70,7 +70,7 @@ function lineChart(b){const W=900,H=220,L=38,R=14,T=14,B=28,pw=W-L-R,ph=H-T-B,ma
  b.forEach((x,i)=>{s+=`<circle cx="${P[i][0]}" cy="${P[i][1]}" r="3.5" fill="${i===k?'#fff':'var(--ac)'}" stroke="${i===k?'var(--ac)':'#fff'}" stroke-width="2"/>`;s+=`<text x="${P[i][0]}" y="${P[i][1]-10}" text-anchor="middle" style="fill:#101828;font-weight:650">${x.n}</text>`;if(i%2===0||i===b.length-1)s+=`<text x="${P[i][0]}" y="${H-8}" text-anchor="middle">${x.lab}</text>`;
   s+=`<rect class="hit" tabindex="0" x="${P[i][0]-sx/2}" y="${T}" width="${sx}" height="${ph}" data-tip="${x.tip}"/>`});
  return s+'</svg>'}
-function rank(el,e,tot,n){const mx=e[0]?e[0][1]:1;el.innerHTML=e.length?e.slice(0,n).map(([k,v],i)=>`<li><span class="n">${i+1}</span><span class="nm" title="${esc(k)}">${esc(k)}</span><span class="tr"><i style="width:${Math.max(2,v/mx*100)}%"></i></span><b>${nf(v)}</b><span class="pc">${nd(v/tot*100)}%</span></li>`).join(''):'<div class="empty">Sem registros no período.</div>'}
+function rank(el,e,tot,n){const mx=e[0]?e[0][1]:1;el.innerHTML=e.length?'<li class="hd"><span>#</span><span>Nome</span><span></span><span>Matríc.</span><span>% total</span></li>'+e.slice(0,n).map(([k,v],i)=>`<li><span class="n">${i+1}</span><span class="nm" title="${esc(k)}">${esc(k)}</span><span class="tr"><i style="width:${Math.max(2,v/mx*100)}%"></i></span><b>${nf(v)}</b><span class="pc">${nd(v/tot*100)}%</span></li>`).join(''):'<div class="empty">Sem registros no período.</div>'}
 function count(a,k){const m={};a.forEach(r=>{const x=r[k]||'Sem gestor';m[x]=(m[x]||0)+1});return Object.entries(m).sort((x,y)=>y[1]-x[1]||x[0].localeCompare(y[0]))}
 function delta(c,p,ok=true){if(!ok)return'';if(!p)return c?'<span class="d">novo</span> sem base de comparação':'';const v=(c-p)/p*100;return`<span class="d ${v>=0?'up':'dn'}">${v>=0?'▲':'▼'} ${nd(Math.abs(v))}%</span> vs. período anterior (${nf(p)})`}
 function desenhar(){
@@ -128,3 +128,4 @@ async function carregar(){$('msg').innerHTML='<div class="msg in">Carregando dad
 Auth.ready.then(async()=>{const u=Auth.require(['gestor','admin']);topo(u,'dashboard.html');await Proc.carregar();
  $('fp').innerHTML='<option value="">Todos / por período</option>'+Proc.C.map(c=>`<option value="${c.n}">Processo ${c.rot}</option>`).join('');carregar();setInterval(()=>{if(!document.hidden)carregar()},5*60*1000)});
 </script></body></html>
+ 
