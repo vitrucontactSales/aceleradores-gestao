@@ -36,7 +36,7 @@ details{margin-top:10px;font-size:.84rem}summary{cursor:pointer;color:var(--ac);
  <section class="card"><div class="ct"><h2>Consultores — do maior para o menor</h2><span id="rkS"></span></div><ol class="rank sc" id="rk"></ol></section>
  <section class="card"><div class="ct"><h2>Por gestor</h2><span>no período</span></div><ol class="rank" id="gs"></ol></section>
 </div>
-<section class="card"><div class="ct"><h2>Evolução semanal</h2><span>últimas 12 semanas · a semana atual (tracejada) ainda está em andamento</span></div><div id="c2"></div></section>
+<section class="card"><div class="ct"><h2>Evolução semanal</h2><span id="c2s"></span></div><div id="c2"></div></section>
 <section class="card"><div class="ct"><h2>Detalhamento por consultor</h2><span id="dtS"></span></div><div class="tbl-wrap"><table id="dt"></table></div></section>
 </main><div id="tip" role="tooltip"></div>
 <script src="auth.js"></script><script src="common.js"></script><script src="data.js"></script><script src="config.js"></script><script src="sample.js"></script><script src="processos.js"></script><script>
@@ -64,10 +64,10 @@ function colChart(b,unit,avg){const W=Math.max(640,$('c1').clientWidth||900),H=2
   s+=`<rect class="hit" tabindex="0" x="${L+sx*i}" y="${T}" width="${sx}" height="${ph}" data-tip="${x.tip}"/>`});
   const ya=T+ph-ph*avg/st.top;s+=`<line class="av" x1="${L}" x2="${W-R}" y1="${ya}" y2="${ya}"/><text class="avt" x="${L+4}" y="${ya-5}" text-anchor="start">média ${nd(avg)}</text></svg>`;return s}
 function lineChart(b){const W=900,H=220,L=38,R=14,T=14,B=28,pw=W-L-R,ph=H-T-B,max=Math.max(1,...b.map(x=>x.n)),st=step(max),sx=pw/(b.length-1||1);
- const P=b.map((x,i)=>[L+sx*i,T+ph-ph*x.n/st.top]);let s=`<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Linha: matrículas por semana nas últimas 12 semanas.">`+ticks(L,W-R,T,ph,st);
- const k=P.length-1;s+=`<polyline fill="none" stroke="var(--ac)" stroke-width="2" stroke-linejoin="round" points="${P.slice(0,k).map(p=>p.join(',')).join(' ')}"/>`;
- if(k>0)s+=`<line x1="${P[k-1][0]}" y1="${P[k-1][1]}" x2="${P[k][0]}" y2="${P[k][1]}" stroke="var(--ac)" stroke-width="2" stroke-dasharray="4 4"/>`;
- b.forEach((x,i)=>{s+=`<circle cx="${P[i][0]}" cy="${P[i][1]}" r="3.5" fill="${i===k?'#fff':'var(--ac)'}" stroke="${i===k?'var(--ac)':'#fff'}" stroke-width="2"/>`;s+=`<text x="${P[i][0]}" y="${P[i][1]-10}" text-anchor="middle" style="fill:#101828;font-weight:650">${x.n}</text>`;if(i%2===0||i===b.length-1)s+=`<text x="${P[i][0]}" y="${H-8}" text-anchor="middle">${x.lab}</text>`;
+ const P=b.map((x,i)=>[L+sx*i,T+ph-ph*x.n/st.top]);let s=`<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Linha: matrículas por semana no período filtrado.">`+ticks(L,W-R,T,ph,st);
+ const k=P.length-1,op=!!(b[k]&&b[k].open),ev=Math.ceil(b.length/14),lv=b.length<=20;s+=`<polyline fill="none" stroke="var(--ac)" stroke-width="2" stroke-linejoin="round" points="${P.slice(0,op?k:k+1).map(p=>p.join(',')).join(' ')}"/>`;
+ if(k>0&&op)s+=`<line x1="${P[k-1][0]}" y1="${P[k-1][1]}" x2="${P[k][0]}" y2="${P[k][1]}" stroke="var(--ac)" stroke-width="2" stroke-dasharray="4 4"/>`;
+ b.forEach((x,i)=>{s+=`<circle cx="${P[i][0]}" cy="${P[i][1]}" r="3.5" fill="${op&&i===k?'#fff':'var(--ac)'}" stroke="${op&&i===k?'var(--ac)':'#fff'}" stroke-width="2"/>`;if(lv||i===k)s+=`<text x="${P[i][0]}" y="${P[i][1]-10}" text-anchor="middle" style="fill:#101828;font-weight:650">${x.n}</text>`;if(i%ev===0||i===b.length-1)s+=`<text x="${P[i][0]}" y="${H-8}" text-anchor="middle">${x.lab}</text>`;
   s+=`<rect class="hit" tabindex="0" x="${P[i][0]-sx/2}" y="${T}" width="${sx}" height="${ph}" data-tip="${x.tip}"/>`});
  return s+'</svg>'}
 function rank(el,e,tot,n){const mx=e[0]?e[0][1]:1;el.innerHTML=e.length?'<li class="hd"><span>#</span><span>Nome</span><span></span><span>Matríc.</span><span>% total</span></li>'+e.slice(0,n).map(([k,v],i)=>`<li><span class="n">${i+1}</span><span class="nm" title="${esc(k)}">${esc(k)}</span><span class="tr"><i style="width:${Math.max(2,v/mx*100)}%"></i></span><b>${nf(v)}</b><span class="pc">${nd(v/tot*100)}%</span></li>`).join(''):'<div class="empty">Sem registros no período.</div>'}
@@ -96,7 +96,7 @@ function desenhar(){
  // ranking
  const bc=count(cur,'consultor');rank($('rk'),bc,cur.length||1,bc.length);$('rkS').textContent=`${nf(bc.length)} consultores no período`;rank($('gs'),count(cur,'gestor'),cur.length||1,99);
  // semanal 12 semanas
- const m0=monday(h),W=[];for(let i=11;i>=0;i--){const a=iso(addD(fromIso(m0),-7*i)),b=iso(addD(fromIso(a),6)),c=inR(a,b).length;W.push({n:c,lab:br(a),tip:`Semana de ${brY(a)} a ${brY(b)} · ${c} matrículas${i===0?' (em andamento)':''}`})}
+ const W=[];for(let a=monday(ini);a<=fim;a=iso(addD(fromIso(a),7))){const b=iso(addD(fromIso(a),6)),op=h>=a&&h<=b,c=inR(a<ini?ini:a,b>fim?fim:b).length;W.push({n:c,lab:br(a),open:op,tip:`Semana de ${brY(a)} a ${brY(b)} · ${c} matrículas${op?' (em andamento)':''}`})}$('c2s').textContent=`${br(ini)} a ${br(fim)} · mesmos filtros do período${W.some(x=>x.open)?' · semana atual (tracejada) em andamento':''}`;
  $('c2').innerHTML=lineChart(W);
  // tabela
  const by={};cur.forEach(r=>{const o=by[r.consultor]||(by[r.consultor]={consultor:r.consultor,total:0,dias:new Set(),ult:'',g:{}});o.total++;o.dias.add(dia(r));if(dia(r)>o.ult)o.ult=dia(r);const k=r.gestor||'—';o.g[k]=(o.g[k]||0)+1});
@@ -128,4 +128,5 @@ async function carregar(){$('msg').innerHTML='<div class="msg in">Carregando dad
 Auth.ready.then(async()=>{const u=Auth.require(['gestor','admin']);topo(u,'dashboard.html');await Proc.carregar();
  $('fp').innerHTML='<option value="">Todos / por período</option>'+Proc.C.map(c=>`<option value="${c.n}">Processo ${c.rot}</option>`).join('');carregar();setInterval(()=>{if(!document.hidden)carregar()},5*60*1000)});
 </script></body></html>
+ 
  
