@@ -1,13 +1,13 @@
 /* Tema corporativo claro — tokens */
-:root{--bg:#f3f4f7;--surf:#fff;--ink:#101828;--mut:#5b6678;--line:#e4e7ec;--navy:#0f1f4d;--ac:#1d3b8b;--hi:#b7791f;--ok:#157347;--er:#b42318;--r:6px;
---f:"Segoe UI Variable Text","Segoe UI",Inter,system-ui,-apple-system,Roboto,sans-serif}
+:root{--bg:#edf1f2;--surf:#fff;--ink:#101214;--mut:#55636b;--line:#dde3e6;--navy:#0e3043;--ac:#0a4694;--hi:#b7791f;--ok:#157347;--er:#b42318;--r:6px;
+--f:Onest,"Segoe UI Variable Text","Segoe UI",Inter,system-ui,-apple-system,Roboto,sans-serif}
 *{box-sizing:border-box}html{-webkit-text-size-adjust:100%}
 body{margin:0;background:var(--bg);color:var(--ink);font:400 15px/1.5 var(--f);font-variant-numeric:tabular-nums}
 .proto{background:#fff8e6;color:#7a4b00;text-align:center;font-size:.74rem;padding:5px 12px;border-bottom:1px solid #f1dfb0;letter-spacing:.01em}
 header{display:flex;gap:4px;align-items:center;padding:0 clamp(8px,1vw,14px);min-height:56px;background:var(--navy);color:#fff;flex-wrap:wrap}
-header b{font-weight:650;letter-spacing:.01em;margin-right:18px}header .sp{flex:1}header .mut{color:#b9c3e0;font-size:.85rem;margin-right:6px}
+header b.brand{display:inline-flex;align-items:center;gap:10px}header b{font-weight:650;letter-spacing:.01em;margin-right:18px}header .sp{flex:1}header .mut{color:#b9c3e0;font-size:.85rem;margin-right:6px}
 header a{color:#c9d2ec;text-decoration:none;padding:17px 12px;font-size:.9rem;border-bottom:2px solid transparent;transition:color .2s cubic-bezier(.4,0,.2,1),border-color .2s cubic-bezier(.4,0,.2,1)}
-header a:hover{color:#fff}header a.on{color:#fff;border-bottom-color:#f2b84b}
+header a:hover{color:#fff}header a.on{color:#fff;border-bottom-color:#4bdeff}
 .tag{font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;padding:3px 8px;border-radius:3px;background:rgba(255,255,255,.12);color:#f2d28a}
 main{max-width:none;margin:0;padding:14px clamp(8px,1vw,14px) 40px}
 .card{background:var(--surf);border:1px solid var(--line);border-radius:var(--r);padding:clamp(16px,2vw,24px);margin-bottom:20px}
