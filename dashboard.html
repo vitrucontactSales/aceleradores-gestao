@@ -9,7 +9,7 @@
 .d{font-weight:650}.d.up{color:var(--ok)}.d.dn{color:var(--er)}
 .grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:12px}.card{padding:16px;margin-bottom:12px}
 .ct{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:6px}.ct h2{margin:0}.ct span{font-size:.8rem;color:var(--mut)}
-svg.chart{width:100%;height:auto;max-height:240px;display:block;overflow:visible}.chart text{font:11px var(--f);fill:#5b6678}.chart .gl{stroke:#e9ecf1;stroke-width:1}.chart .av{stroke:var(--hi);stroke-width:1.5;stroke-dasharray:5 4}.chart .avt{fill:#8a5a10;font-weight:650}
+svg.chart{width:100%;height:auto;display:block;overflow:visible}.chart text{font:11px var(--f);fill:#5b6678}.chart .gl{stroke:#e9ecf1;stroke-width:1}.chart .av{stroke:var(--hi);stroke-width:1.5;stroke-dasharray:5 4}.chart .avt{fill:#8a5a10;font-weight:650}
 .chart .hit{fill:transparent;cursor:crosshair}.chart .hit:hover,.chart .hit:focus{fill:rgba(29,59,139,.07);outline:none}
 .rank{list-style:none;margin:0;padding:0}.rank li{display:grid;grid-template-columns:22px minmax(150px,2.2fr) minmax(60px,1.2fr) 46px 50px;gap:10px;align-items:center;padding:9px 0;border-bottom:1px solid var(--line);font-size:.88rem}.rank li:last-child{border-bottom:0}
 .rank .n{color:#98a2b3;font-size:.78rem}.rank .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.rank .tr{height:6px;background:#eef1f6;border-radius:3px}.rank .tr i{display:block;height:6px;background:var(--ac);border-radius:3px;transition:width .5s cubic-bezier(.2,.8,.2,1)}.rank b{text-align:right;font-weight:650}.rank .pc{color:var(--mut);text-align:right;font-size:.8rem}
@@ -54,13 +54,13 @@ function janela(){const h=iso(new Date());let ini,fim=h;
  return{ini,fim}}
 function step(max){const raw=max/4,c=[1,2,5,10,20,25,50,100,200,250,500,1000,2000,5000];const s=c.find(x=>x>=raw)||raw;const seg=Math.max(1,Math.ceil(max/s));return{s,top:s*seg,seg}}
 function ticks(L,W,T,ph,st){let o='';for(let i=0;i<=st.seg;i++){const y=T+ph-ph*i/st.seg;o+=`<line class="gl" x1="${L}" x2="${W}" y1="${y}" y2="${y}"/><text x="${L-8}" y="${y+4}" text-anchor="end">${nf(st.s*i)}</text>`}return o}
-function colChart(b,unit,avg){const W=900,H=260,L=38,R=6,T=14,B=28,pw=W-L-R,ph=H-T-B,max=Math.max(1,...b.map(x=>x.n)),st=step(max),sx=pw/b.length,bw=Math.min(26,sx*.64);
+function colChart(b,unit,avg){const W=Math.max(640,$('c1').clientWidth||900),H=272,L=38,R=6,T=14,B=44,pw=W-L-R,ph=H-T-B,max=Math.max(1,...b.map(x=>x.n)),st=step(max),sx=pw/b.length,bw=Math.min(40,sx*.64);
  let s=`<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Gráfico de colunas: matrículas por ${unit}. Veja os dados abaixo.">`+ticks(L,W-R,T,ph,st);
- const ev=Math.ceil(b.length/Math.floor(pw/54));
+ const ev=unit==='dia'?1:Math.ceil(b.length/Math.floor(pw/54));
  b.forEach((x,i)=>{const h=ph*x.n/st.top,bx=L+sx*i+(sx-bw)/2,y=T+ph-h,r=Math.min(3,h);
   if(x.n>0)s+=`<path d="M${bx},${y+h}V${y+r}Q${bx},${y} ${bx+r},${y}H${bx+bw-r}Q${bx+bw},${y} ${bx+bw},${y+r}V${y+h}Z" fill="var(--ac)"/>`;
   if(x.n>0)s+=`<text x="${bx+bw/2}" y="${y-4}" text-anchor="middle" style="fill:#101828;font-weight:650;font-size:${sx<20?9:11}px">${x.n}</text>`;
-  if(i%ev===0)s+=`<text x="${bx+bw/2}" y="${H-8}" text-anchor="middle">${x.lab}</text>`;
+  if(i%ev===0){const fs=sx<36?9:11;if(unit==='dia')s+=`<text x="${bx+bw/2}" y="${H-22}" text-anchor="middle" style="font-size:${fs}px;font-weight:650">${x.tip.slice(0,3)}</text>`;s+=`<text x="${bx+bw/2}" y="${H-8}" text-anchor="middle" style="font-size:${fs}px">${x.lab}</text>`}
   s+=`<rect class="hit" tabindex="0" x="${L+sx*i}" y="${T}" width="${sx}" height="${ph}" data-tip="${x.tip}"/>`});
   const ya=T+ph-ph*avg/st.top;s+=`<line class="av" x1="${L}" x2="${W-R}" y1="${ya}" y2="${ya}"/><text class="avt" x="${L+4}" y="${ya-5}" text-anchor="start">média ${nd(avg)}</text></svg>`;return s}
 function lineChart(b){const W=900,H=220,L=38,R=14,T=14,B=28,pw=W-L-R,ph=H-T-B,max=Math.max(1,...b.map(x=>x.n)),st=step(max),sx=pw/(b.length-1||1);
