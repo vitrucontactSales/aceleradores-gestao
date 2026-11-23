@@ -47,7 +47,7 @@ const DS=['dom','seg','ter','qua','qui','sex','sáb'],br=s=>s.slice(8)+'/'+s.sli
 const monday=s=>{const d=fromIso(s);return iso(addD(d,-((d.getDay()+6)%7)))};
 let BASE=[],FONTE='',preset='mes',sort={k:'total',dir:-1},ROWS=[];
 function janela(){const h=iso(new Date());let ini,fim=h;
- if(preset==='proc'){const c=Proc.C.find(x=>String(x.n)===$('fp').value);if(c){ini=c.ini;fim=c.fim<h?c.fim:h;if(ini>fim)fim=ini;return{ini,fim}}preset='mes'}
+ if(preset==='proc'){const c=Proc.C.find(x=>x.rot===$('fp').value);if(c){ini=c.ini;fim=c.fim<h?c.fim:h;if(ini>fim)fim=ini;return{ini,fim}}preset='mes'}
  if(preset==='7')ini=iso(addD(new Date(),-6));else if(preset==='30')ini=iso(addD(new Date(),-29));else if(preset==='mes')ini=h.slice(0,8)+'01';
  else if(preset==='tudo'){const ds=BASE.map(dia).filter(Boolean).sort();ini=ds[0]||h;if(ds.length&&ds[ds.length-1]>h)fim=ds[ds.length-1]}
  else{ini=$('de').value||h.slice(0,8)+'01';fim=$('ate').value||h;if(ini>fim)[ini,fim]=[fim,ini]}
@@ -78,7 +78,7 @@ function desenhar(){
  const F=BASE.filter(r=>dia(r)&&(!g||r.gestor===g)&&(!q||String(r.consultor).toLowerCase().includes(q))),inR=(a,b)=>F.filter(r=>{const d=dia(r);return d>=a&&d<=b});
  const cur=inR(ini,fim),pI=iso(addD(fromIso(ini),-n)),pF=iso(addD(fromIso(ini),-1)),prev=preset==='tudo'?[]:inR(pI,pF);
  $('de').value=ini;$('ate').value=fim;
- const pc=preset==='proc'?Proc.C.find(x=>String(x.n)===$('fp').value):null;
+ const pc=preset==='proc'?Proc.C.find(x=>x.rot===$('fp').value):null;
  $('procInfo').textContent=pc?`Processo ${pc.rot} · ${brD(pc.ini)} a ${brD(pc.fim)} · ${h<pc.ini?'ainda não iniciado':h>pc.fim?'encerrado':'dia '+(diff(pc.ini,h)+1)+' de '+(diff(pc.ini,pc.fim)+1)}`:'';
  const porDia={};cur.forEach(r=>{const d=dia(r);porDia[d]=(porDia[d]||0)+1});
  const best=Object.entries(porDia).sort((a,b)=>b[1]-a[1])[0],cons=new Set(cur.map(r=>r.consultor)).size,hoje=F.filter(r=>dia(r)===h).length,ont=F.filter(r=>dia(r)===iso(addD(new Date(),-1))).length;
@@ -126,7 +126,7 @@ async function carregar(){$('msg').innerHTML='<div class="msg in">Carregando dad
  $('msg').innerHTML=r.aviso?`<div class="msg er">${esc(r.aviso)}</div>`:'';
  $('sub').textContent=`Fonte: ${r.fonte==='real'?'banco real (somente leitura)':'amostra local'} · ${nf(BASE.length)} registros na base${mock.length?` (${mock.length} do protótipo)`:''} · atualizado às ${new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}`;desenhar()}
 Auth.ready.then(async()=>{const u=Auth.require(['gestor','admin']);topo(u,'dashboard.html');await Proc.carregar();
- $('fp').innerHTML='<option value="">Todos / por período</option>'+Proc.C.map(c=>`<option value="${c.n}">Processo ${c.rot}</option>`).join('');carregar();setInterval(()=>{if(!document.hidden)carregar()},5*60*1000)});
+ $('fp').innerHTML='<option value="">Todos / por período</option>'+Proc.C.map(c=>`<option value="${c.rot}">Processo ${c.rot}</option>`).join('');carregar();setInterval(()=>{if(!document.hidden)carregar()},5*60*1000)});
 </script></body></html>
  
  
