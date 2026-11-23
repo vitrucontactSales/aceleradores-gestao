@@ -14,6 +14,16 @@ const Edic={K:'proto_edic',
   aplicar(r){const e=this.todos()[r.id];return e?{...r,...e.campos,editado:true}:r},
   hist(id){return(this.todos()[id]||{}).hist||[]},
   salvar(id,antes,novos,motivo,por){const t=this.todos(),e=t[id]||{campos:{},hist:[]};e.campos={...e.campos,...novos};e.hist.push({em:new Date().toISOString(),por,motivo,antes,depois:novos});t[id]=e;localStorage.setItem(this.K,JSON.stringify(t))}};
+/* Comprovante de pagamento (boleto/Pix enviado pelo candidato). Protótipo: fica só neste navegador, como Trat/Edic.
+   Imagem é reduzida (JPEG até 1200px); PDF até 350 KB. Em produção: bucket privado no Supabase Storage + Supabase Auth. */
+const Comp={K:'proto_comp',
+  todos(){try{return JSON.parse(localStorage.getItem(this.K))||{}}catch(e){return{}}},
+  get(id){return this.todos()[id]||null},
+  async ler(f){
+    if(f.type==='application/pdf'){if(f.size>350e3)throw Error('PDF acima de 350 KB: envie como foto ou print.');return await new Promise((ok,er)=>{const r=new FileReader();r.onload=()=>ok(r.result);r.onerror=er;r.readAsDataURL(f)})}
+    if(!f.type.startsWith('image/'))throw Error('Envie uma imagem ou um PDF.');
+    const b=await createImageBitmap(f),k=Math.min(1,1200/Math.max(b.width,b.height)),c=document.createElement('canvas');c.width=Math.round(b.width*k);c.height=Math.round(b.height*k);c.getContext('2d').drawImage(b,0,0,c.width,c.height);return c.toDataURL('image/jpeg',.7)},
+  salvar(id,url,por){const t=this.todos();t[id]={url,por,em:new Date().toISOString()};try{localStorage.setItem(this.K,JSON.stringify(t))}catch(e){throw Error('Sem espaço no navegador para guardar o comprovante (protótipo).')}}};
 const Dados={
   async sb(){if(!window.supabase){await new Promise((ok,er)=>{const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';s.onload=ok;s.onerror=er;document.head.appendChild(s)})}return this._sb||(this._sb=window.supabase.createClient(CFG.URL,CFG.KEY))},
   mat(){try{return JSON.parse(localStorage.getItem('proto_mat'))||[]}catch(e){return[]}},
