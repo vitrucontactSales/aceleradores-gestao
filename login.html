@@ -1,0 +1,21 @@
+<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Entrar — Portal Aceleradores (protótipo)</title><link rel="stylesheet" href="common.css"></head><body>
+<div class="proto">PROTÓTIPO — contas ficam apenas neste navegador; nada é enviado ao Supabase</div>
+<main style="max-width:430px"><div class="card"><h1>Portal Aceleradores</h1>
+<div class="tabs"><button id="tEnt">Entrar</button><button id="tCad" class="sec">Criar cadastro</button></div><div id="msg"></div>
+<form id="fEnt"><label>E-mail</label><input id="eEmail" type="email" autocomplete="username" required><label>Senha</label><input id="eSenha" type="password" autocomplete="current-password" required><p><button>Entrar</button></p></form>
+<form id="fCad" class="hide"><label>Nome completo (igual ao cadastro de colaboradores)</label><input id="cNome" required><label>E-mail</label><input id="cEmail" type="email" autocomplete="username" required>
+<label>Perfil que você precisa</label><select id="cPerfil"><option value="consultor">Consultor (registrar matrículas)</option><option value="gestor">Gestor (dashboard, painel, correções)</option></select>
+<label>Senha (mín. 8 caracteres)</label><input id="cSenha" type="password" minlength="8" autocomplete="new-password" required><label>Repita a senha</label><input id="cSenha2" type="password" autocomplete="new-password" required>
+<p class="mut" style="font-size:.8rem">Todo cadastro fica <b>pendente</b> até um administrador aprovar e definir o perfil.</p><p><button>Solicitar cadastro</button></p></form></div>
+<div class="card"><h2>Contas de demonstração (fictícias)</h2><table><tr><td>Administrador</td><td>admin@proto.local</td><td>Admin#demo1</td></tr><tr><td>Gestor</td><td>gestor@proto.local</td><td>Gestor#demo1</td></tr><tr><td>Consultor</td><td>consultor@proto.local</td><td>Consul#demo1</td></tr></table>
+<p><button class="sec" id="rst">Zerar dados do protótipo</button></p></div></main>
+<script src="auth.js"></script><script>
+const $=id=>document.getElementById(id),m=(t,c)=>$('msg').innerHTML=t?`<div class="msg ${c}">${t}</div>`:'';
+function aba(c){$('fEnt').classList.toggle('hide',c);$('fCad').classList.toggle('hide',!c);$('tEnt').className=c?'sec':'';$('tCad').className=c?'':'sec';m('')}
+$('tEnt').onclick=()=>aba(false);$('tCad').onclick=()=>aba(true);
+$('fEnt').onsubmit=async e=>{e.preventDefault();try{await Auth.signIn($('eEmail').value,$('eSenha').value);location.href='index.html'}catch(x){m(x.message,'er')}};
+$('fCad').onsubmit=async e=>{e.preventDefault();if($('cSenha').value!==$('cSenha2').value)return m('As senhas não conferem.','er');
+ try{await Auth.signUp({email:$('cEmail').value,senha:$('cSenha').value,nome:$('cNome').value,perfilSolicitado:$('cPerfil').value});$('fCad').reset();aba(false);m('Cadastro enviado. Aguarde a aprovação de um administrador para entrar.','ok')}catch(x){m(x.message,'er')}};
+$('rst').onclick=()=>{if(confirm('Apagar contas, sessão e registros do protótipo neste navegador?')){Auth.reset();location.reload()}};
+Auth.ready.then(()=>{if(Auth.current())location.replace('index.html')});
+</script></body></html>

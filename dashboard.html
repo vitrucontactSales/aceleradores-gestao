@@ -1,0 +1,130 @@
+<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Dashboard — Portal Aceleradores (protótipo)</title><link rel="stylesheet" href="common.css">
+<style>
+.pg-head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:22px}.pg-head p{margin:0;font-size:.88rem}
+.bar-f{display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap;padding:16px 18px;margin-bottom:20px}.bar-f>div{min-width:140px;flex:1}.bar-f label{margin-top:0}.bar-f input,.bar-f select,.seg button{height:42px;padding-top:0;padding-bottom:0}
+.seg{display:inline-flex;border:1px solid #cfd5df;border-radius:var(--r);overflow:hidden;flex:0 0 auto!important}.seg button{border:0;border-radius:0;background:#fff;color:var(--ink);padding:9px 14px;font-weight:550;border-right:1px solid #cfd5df}.seg button:last-child{border-right:0}.seg button[aria-pressed=true]{background:var(--navy);color:#fff}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(clamp(180px,22vw,260px),1fr));gap:16px;margin-bottom:20px}
+.kpi{background:var(--surf);border:1px solid var(--line);border-radius:var(--r);padding:20px 22px;border-top:3px solid var(--navy)}
+.kpi .l{font-size:.72rem;text-transform:uppercase;letter-spacing:.09em;color:var(--mut);font-weight:650}.kpi .v{font-size:clamp(1.9rem,1.4rem + 1.6vw,2.7rem);font-weight:650;letter-spacing:-.02em;line-height:1.1;margin:8px 0 6px}.kpi .s{font-size:.82rem;color:var(--mut)}
+.d{font-weight:650}.d.up{color:var(--ok)}.d.dn{color:var(--er)}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:20px}
+.ct{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:6px}.ct h2{margin:0}.ct span{font-size:.8rem;color:var(--mut)}
+svg.chart{width:100%;height:auto;display:block;overflow:visible}.chart text{font:11px var(--f);fill:#5b6678}.chart .gl{stroke:#e9ecf1;stroke-width:1}.chart .av{stroke:var(--hi);stroke-width:1.5;stroke-dasharray:5 4}.chart .avt{fill:#8a5a10;font-weight:650}
+.chart .hit{fill:transparent;cursor:crosshair}.chart .hit:hover,.chart .hit:focus{fill:rgba(29,59,139,.07);outline:none}
+.rank{list-style:none;margin:0;padding:0}.rank li{display:grid;grid-template-columns:22px minmax(150px,2.2fr) minmax(60px,1.2fr) 46px 50px;gap:10px;align-items:center;padding:9px 0;border-bottom:1px solid var(--line);font-size:.88rem}.rank li:last-child{border-bottom:0}
+.rank .n{color:#98a2b3;font-size:.78rem}.rank .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.rank .tr{height:6px;background:#eef1f6;border-radius:3px}.rank .tr i{display:block;height:6px;background:var(--ac);border-radius:3px;transition:width .5s cubic-bezier(.2,.8,.2,1)}.rank b{text-align:right;font-weight:650}.rank .pc{color:var(--mut);text-align:right;font-size:.8rem}
+.tbl-wrap{overflow:auto;max-height:560px;border:1px solid var(--line);border-radius:var(--r)}.tbl-wrap th{position:sticky;top:0;cursor:pointer;user-select:none}.tbl-wrap th[aria-sort]::after{content:attr(data-a);margin-left:6px;color:var(--ac)}.tbl-wrap td.num,.tbl-wrap th.num{text-align:right}
+details{margin-top:10px;font-size:.84rem}summary{cursor:pointer;color:var(--ac);font-weight:600}details table{margin-top:8px}
+#tip{position:fixed;pointer-events:none;background:var(--navy);color:#fff;padding:7px 11px;border-radius:4px;font-size:.8rem;box-shadow:0 6px 20px rgba(15,31,77,.25);opacity:0;transition:opacity .12s;z-index:20;max-width:260px}
+.empty{padding:36px 0;text-align:center;color:var(--mut)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style></head><body>
+<main>
+<div class="pg-head"><div><h1>Matrículas — visão consolidada</h1><p class="mut" id="sub">Carregando…</p><p id="procInfo" style="margin:4px 0 0;font-weight:600;color:var(--ac);font-size:.88rem"></p></div><div class="row" style="flex:0 0 auto"><button class="sec" id="atu">Atualizar</button><button class="sec" id="csv">Exportar CSV</button></div></div>
+<section class="card bar-f" aria-label="Filtros">
+ <div style="flex:0 0 auto"><label>Período</label><div class="seg" role="group" aria-label="Período"><button data-p="7" aria-pressed="false">7 dias</button><button data-p="30" aria-pressed="false">30 dias</button><button data-p="mes" aria-pressed="true">Mês atual</button><button data-p="tudo" aria-pressed="false">Tudo</button></div></div>
+ <div><label for="fp">Processo</label><select id="fp"><option value="">Todos / por período</option></select></div>
+ <div><label for="de">De</label><input id="de" type="date"></div><div><label for="ate">Até</label><input id="ate" type="date"></div>
+ <div><label for="fg">Gestor</label><select id="fg"><option value="">Todos</option></select></div><div><label for="fc">Consultor</label><input id="fc" placeholder="Buscar pelo nome"></div>
+ <div><label for="fonte">Fonte dos dados</label><select id="fonte"><option value="real">Banco real (leitura)</option><option value="amostra">Amostra local</option></select></div>
+</section>
+<div id="msg" aria-live="polite"></div>
+<section class="kpis" id="kpis" aria-label="Indicadores"></section>
+<section class="card"><div class="ct"><h2 id="t1">Matrículas por dia</h2><span id="t1s"></span></div><div id="c1"></div>
+ <details><summary>Ver dados do gráfico</summary><div id="c1t"></div></details></section>
+<div class="grid2">
+ <section class="card"><div class="ct"><h2>Consultores — top 10</h2><span id="rkS"></span></div><ol class="rank" id="rk"></ol></section>
+ <section class="card"><div class="ct"><h2>Por gestor</h2><span>no período</span></div><ol class="rank" id="gs"></ol></section>
+</div>
+<section class="card"><div class="ct"><h2>Evolução semanal</h2><span>últimas 12 semanas · a semana atual (tracejada) ainda está em andamento</span></div><div id="c2"></div></section>
+<section class="card"><div class="ct"><h2>Detalhamento por consultor</h2><span id="dtS"></span></div><div class="tbl-wrap"><table id="dt"></table></div></section>
+</main><div id="tip" role="tooltip"></div>
+<script src="auth.js"></script><script src="common.js"></script><script src="data.js"></script><script src="config.js"></script><script src="sample.js"></script><script src="processos.js"></script><script>
+const $=id=>document.getElementById(id),nf=n=>n.toLocaleString('pt-BR'),nd=(n,d=1)=>n.toLocaleString('pt-BR',{minimumFractionDigits:d,maximumFractionDigits:d});
+const pad=n=>String(n).padStart(2,'0'),iso=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+const fromIso=s=>{const [y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d)},addD=(d,n)=>{const x=new Date(d);x.setDate(x.getDate()+n);return x},diff=(a,b)=>Math.round((fromIso(b)-fromIso(a))/864e5);
+const DS=['dom','seg','ter','qua','qui','sex','sáb'],br=s=>s.slice(8)+'/'+s.slice(5,7),brY=s=>s.slice(8)+'/'+s.slice(5,7)+'/'+s.slice(0,4),dia=r=>String(r.registrado_em||'').slice(0,10);
+const monday=s=>{const d=fromIso(s);return iso(addD(d,-((d.getDay()+6)%7)))};
+let BASE=[],FONTE='',preset='mes',sort={k:'total',dir:-1},ROWS=[];
+function janela(){const h=iso(new Date());let ini,fim=h;
+ if(preset==='proc'){const c=Proc.C.find(x=>String(x.n)===$('fp').value);if(c){ini=c.ini;fim=c.fim<h?c.fim:h;if(ini>fim)fim=ini;return{ini,fim}}preset='mes'}
+ if(preset==='7')ini=iso(addD(new Date(),-6));else if(preset==='30')ini=iso(addD(new Date(),-29));else if(preset==='mes')ini=h.slice(0,8)+'01';
+ else if(preset==='tudo'){const ds=BASE.map(dia).filter(Boolean).sort();ini=ds[0]||h;if(ds.length&&ds[ds.length-1]>h)fim=ds[ds.length-1]}
+ else{ini=$('de').value||h.slice(0,8)+'01';fim=$('ate').value||h;if(ini>fim)[ini,fim]=[fim,ini]}
+ return{ini,fim}}
+function step(max){const raw=max/4,c=[1,2,5,10,20,25,50,100,200,250,500,1000,2000,5000];const s=c.find(x=>x>=raw)||raw;const seg=Math.max(1,Math.ceil(max/s));return{s,top:s*seg,seg}}
+function ticks(L,W,T,ph,st){let o='';for(let i=0;i<=st.seg;i++){const y=T+ph-ph*i/st.seg;o+=`<line class="gl" x1="${L}" x2="${W}" y1="${y}" y2="${y}"/><text x="${L-8}" y="${y+4}" text-anchor="end">${nf(st.s*i)}</text>`}return o}
+function colChart(b,unit,avg){const W=900,H=260,L=38,R=6,T=14,B=28,pw=W-L-R,ph=H-T-B,max=Math.max(1,...b.map(x=>x.n)),st=step(max),sx=pw/b.length,bw=Math.min(26,sx*.64);
+ let s=`<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Gráfico de colunas: matrículas por ${unit}. Veja os dados abaixo.">`+ticks(L,W-R,T,ph,st);
+ const ev=Math.ceil(b.length/Math.floor(pw/54));
+ b.forEach((x,i)=>{const h=ph*x.n/st.top,bx=L+sx*i+(sx-bw)/2,y=T+ph-h,r=Math.min(3,h);
+  if(x.n>0)s+=`<path d="M${bx},${y+h}V${y+r}Q${bx},${y} ${bx+r},${y}H${bx+bw-r}Q${bx+bw},${y} ${bx+bw},${y+r}V${y+h}Z" fill="var(--ac)"/>`;
+  if(i%ev===0)s+=`<text x="${bx+bw/2}" y="${H-8}" text-anchor="middle">${x.lab}</text>`;
+  s+=`<rect class="hit" tabindex="0" x="${L+sx*i}" y="${T}" width="${sx}" height="${ph}" data-tip="${x.tip}"/>`});
+ const m=b.reduce((a,x)=>x.n>a.n?x:a,b[0]);if(m&&m.n>0){const i=b.indexOf(m);s+=`<text x="${L+sx*i+sx/2}" y="${T+ph-ph*m.n/st.top-6}" text-anchor="middle" style="fill:#101828;font-weight:650">${m.n}</text>`}
+ const ya=T+ph-ph*avg/st.top;s+=`<line class="av" x1="${L}" x2="${W-R}" y1="${ya}" y2="${ya}"/><text class="avt" x="${W-R}" y="${ya-5}" text-anchor="end">média ${nd(avg)}</text></svg>`;return s}
+function lineChart(b){const W=900,H=220,L=38,R=14,T=14,B=28,pw=W-L-R,ph=H-T-B,max=Math.max(1,...b.map(x=>x.n)),st=step(max),sx=pw/(b.length-1||1);
+ const P=b.map((x,i)=>[L+sx*i,T+ph-ph*x.n/st.top]);let s=`<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Linha: matrículas por semana nas últimas 12 semanas.">`+ticks(L,W-R,T,ph,st);
+ const k=P.length-1;s+=`<polyline fill="none" stroke="var(--ac)" stroke-width="2" stroke-linejoin="round" points="${P.slice(0,k).map(p=>p.join(',')).join(' ')}"/>`;
+ if(k>0)s+=`<line x1="${P[k-1][0]}" y1="${P[k-1][1]}" x2="${P[k][0]}" y2="${P[k][1]}" stroke="var(--ac)" stroke-width="2" stroke-dasharray="4 4"/>`;
+ b.forEach((x,i)=>{s+=`<circle cx="${P[i][0]}" cy="${P[i][1]}" r="3.5" fill="${i===k?'#fff':'var(--ac)'}" stroke="${i===k?'var(--ac)':'#fff'}" stroke-width="2"/>`;if(i%2===0||i===b.length-1)s+=`<text x="${P[i][0]}" y="${H-8}" text-anchor="middle">${x.lab}</text>`;
+  s+=`<rect class="hit" tabindex="0" x="${P[i][0]-sx/2}" y="${T}" width="${sx}" height="${ph}" data-tip="${x.tip}"/>`});
+ const l=P[P.length-1];return s+`<text x="${l[0]}" y="${l[1]-10}" text-anchor="middle" style="fill:#101828;font-weight:650">${b[b.length-1].n}</text></svg>`}
+function rank(el,e,tot,n){const mx=e[0]?e[0][1]:1;el.innerHTML=e.length?e.slice(0,n).map(([k,v],i)=>`<li><span class="n">${i+1}</span><span class="nm" title="${esc(k)}">${esc(k)}</span><span class="tr"><i style="width:${Math.max(2,v/mx*100)}%"></i></span><b>${nf(v)}</b><span class="pc">${nd(v/tot*100)}%</span></li>`).join(''):'<div class="empty">Sem registros no período.</div>'}
+function count(a,k){const m={};a.forEach(r=>{const x=r[k]||'Sem gestor';m[x]=(m[x]||0)+1});return Object.entries(m).sort((x,y)=>y[1]-x[1]||x[0].localeCompare(y[0]))}
+function delta(c,p,ok=true){if(!ok)return'';if(!p)return c?'<span class="d">novo</span> sem base de comparação':'';const v=(c-p)/p*100;return`<span class="d ${v>=0?'up':'dn'}">${v>=0?'▲':'▼'} ${nd(Math.abs(v))}%</span> vs. período anterior (${nf(p)})`}
+function desenhar(){
+ const g=$('fg').value,q=$('fc').value.trim().toLowerCase(),{ini,fim}=janela(),n=diff(ini,fim)+1,h=iso(new Date());
+ const F=BASE.filter(r=>dia(r)&&(!g||r.gestor===g)&&(!q||String(r.consultor).toLowerCase().includes(q))),inR=(a,b)=>F.filter(r=>{const d=dia(r);return d>=a&&d<=b});
+ const cur=inR(ini,fim),pI=iso(addD(fromIso(ini),-n)),pF=iso(addD(fromIso(ini),-1)),prev=preset==='tudo'?[]:inR(pI,pF);
+ $('de').value=ini;$('ate').value=fim;
+ const pc=preset==='proc'?Proc.C.find(x=>String(x.n)===$('fp').value):null;
+ $('procInfo').textContent=pc?`Processo ${pc.rot} · ${brD(pc.ini)} a ${brD(pc.fim)} · ${h<pc.ini?'ainda não iniciado':h>pc.fim?'encerrado':'dia '+(diff(pc.ini,h)+1)+' de '+(diff(pc.ini,pc.fim)+1)}`:'';
+ const porDia={};cur.forEach(r=>{const d=dia(r);porDia[d]=(porDia[d]||0)+1});
+ const best=Object.entries(porDia).sort((a,b)=>b[1]-a[1])[0],cons=new Set(cur.map(r=>r.consultor)).size,hoje=F.filter(r=>dia(r)===h).length,ont=F.filter(r=>dia(r)===iso(addD(new Date(),-1))).length;
+ $('kpis').innerHTML=[['Matrículas no período',nf(cur.length),delta(cur.length,prev.length,preset!=='tudo')||`${br(ini)} a ${br(fim)}`],
+  ['Média por dia',nd(cur.length/n),best?`Melhor dia: <b>${best[1]}</b> em ${br(best[0])}`:'Sem registros'],
+  ['Consultores com venda',nf(cons),cons?`${nd(cur.length/cons)} matrículas por consultor`:'—'],
+  ['Hoje',nf(hoje),`Ontem: ${nf(ont)}`]].map(([l,v,s])=>`<div class="kpi"><div class="l">${l}</div><div class="v">${v}</div><div class="s">${s}</div></div>`).join('');
+ // gráfico principal: diário até 62 dias, senão semanal
+ let B=[],un='dia';
+ if(n<=62){for(let i=0;i<n;i++){const d=iso(addD(fromIso(ini),i)),c=porDia[d]||0;B.push({n:c,lab:br(d),tip:`${DS[fromIso(d).getDay()]}, ${brY(d)} · ${c} matrícula${c===1?'':'s'}`,k:brY(d)})}}
+ else{un='semana';const w={};cur.forEach(r=>{const k=monday(dia(r));w[k]=(w[k]||0)+1});for(let d=monday(ini);d<=fim;d=iso(addD(fromIso(d),7))){const c=w[d]||0;B.push({n:c,lab:br(d),tip:`Semana de ${brY(d)} · ${c} matrícula${c===1?'':'s'}`,k:'Semana de '+brY(d)})}}
+ $('t1').textContent='Matrículas por '+un;$('t1s').textContent=un==='dia'?'tracejado = média do período':'semanas iniciando na segunda · tracejado = média';
+ const avg=B.length?cur.length/B.length:0;$('c1').innerHTML=cur.length||B.length?colChart(B,un,avg):'<div class="empty">Sem dados.</div>';
+ $('c1t').innerHTML=`<table><tr><th>${un==='dia'?'Dia':'Semana'}</th><th class="num">Matrículas</th></tr>${B.map(x=>`<tr><td>${x.k}</td><td>${x.n}</td></tr>`).join('')}</table>`;
+ // ranking
+ const bc=count(cur,'consultor');rank($('rk'),bc,cur.length||1,10);$('rkS').textContent=`${nf(bc.length)} consultores no período`;rank($('gs'),count(cur,'gestor'),cur.length||1,12);
+ // semanal 12 semanas
+ const m0=monday(h),W=[];for(let i=11;i>=0;i--){const a=iso(addD(fromIso(m0),-7*i)),b=iso(addD(fromIso(a),6)),c=inR(a,b).length;W.push({n:c,lab:br(a),tip:`Semana de ${brY(a)} a ${brY(b)} · ${c} matrículas${i===0?' (em andamento)':''}`})}
+ $('c2').innerHTML=lineChart(W);
+ // tabela
+ const by={};cur.forEach(r=>{const o=by[r.consultor]||(by[r.consultor]={consultor:r.consultor,total:0,dias:new Set(),ult:'',g:{}});o.total++;o.dias.add(dia(r));if(dia(r)>o.ult)o.ult=dia(r);const k=r.gestor||'—';o.g[k]=(o.g[k]||0)+1});
+ ROWS=Object.values(by).map(o=>({consultor:o.consultor,gestor:Object.entries(o.g).sort((a,b)=>b[1]-a[1])[0][0],total:o.total,pct:o.total/(cur.length||1)*100,media:o.total/o.dias.size,ult:o.ult}));tabela();
+}
+function tabela(){const C=[['consultor','Consultor'],['gestor','Gestor'],['total','Matrículas','num'],['pct','% do total','num'],['media','Média/dia ativo','num'],['ult','Última matrícula','num']];
+ ROWS.sort((a,b)=>(typeof a[sort.k]==='string'?a[sort.k].localeCompare(b[sort.k]):a[sort.k]-b[sort.k])*sort.dir);
+ $('dtS').textContent=`${nf(ROWS.length)} consultores · clique no título para ordenar`;
+ $('dt').innerHTML=`<thead><tr>${C.map(([k,t,c])=>`<th class="${c||''}" data-k="${k}" ${sort.k===k?`aria-sort="${sort.dir>0?'ascending':'descending'}" data-a="${sort.dir>0?'↑':'↓'}"`:''}>${t}</th>`).join('')}</tr></thead><tbody>${ROWS.map(r=>`<tr><td>${esc(r.consultor)}</td><td>${esc(r.gestor)}</td><td class="num">${nf(r.total)}</td><td class="num">${nd(r.pct)}%</td><td class="num">${nd(r.media)}</td><td class="num">${brY(r.ult)}</td></tr>`).join('')||'<tr><td colspan="6" class="empty">Sem registros no período.</td></tr>'}</tbody>`}
+$('dt').addEventListener('click',e=>{const t=e.target.closest('th');if(!t)return;const k=t.dataset.k;sort=sort.k===k?{k,dir:-sort.dir}:{k,dir:k==='consultor'||k==='gestor'?1:-1};tabela()});
+$('csv').onclick=()=>{const sf=v=>{v=String(v);if(/^[=+\-@]/.test(v))v="'"+v;return'"'+v.replace(/"/g,'""')+'"'};
+ const L=[['Consultor','Gestor','Matrículas','% do total','Média/dia ativo','Última matrícula'].join(';')].concat(ROWS.map(r=>[sf(r.consultor),sf(r.gestor),r.total,nd(r.pct,2),nd(r.media,2),r.ult].join(';')));
+ const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['﻿'+L.join('\r\n')],{type:'text/csv;charset=utf-8'}));a.download='matriculas_por_consultor.csv';a.click()};
+// tooltip (mouse e teclado)
+const tip=$('tip');function showTip(t,x,y){tip.textContent=t;tip.style.opacity=1;const w=tip.offsetWidth;tip.style.left=Math.min(x+14,innerWidth-w-8)+'px';tip.style.top=(y+14)+'px'}
+document.addEventListener('mousemove',e=>{const t=e.target.closest&&e.target.closest('[data-tip]');t?showTip(t.dataset.tip,e.clientX,e.clientY):tip.style.opacity=0});
+document.addEventListener('focusin',e=>{const t=e.target.closest&&e.target.closest('[data-tip]');if(t){const r=t.getBoundingClientRect();showTip(t.dataset.tip,r.left+r.width/2,r.top)}});document.addEventListener('focusout',()=>tip.style.opacity=0);
+// filtros
+document.querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>{preset=b.dataset.p;$('fp').value='';document.querySelectorAll('[data-p]').forEach(x=>x.setAttribute('aria-pressed',x===b));desenhar()});
+$('fp').onchange=()=>{const v=$('fp').value;preset=v?'proc':'mes';document.querySelectorAll('[data-p]').forEach(x=>x.setAttribute('aria-pressed',!v&&x.dataset.p==='mes'));desenhar()};
+['de','ate'].forEach(i=>$(i).onchange=()=>{preset='custom';$('fp').value='';document.querySelectorAll('[data-p]').forEach(x=>x.setAttribute('aria-pressed',false));desenhar()});
+$('fg').onchange=desenhar;$('fc').oninput=desenhar;$('fonte').onchange=carregar;$('atu').onclick=carregar;
+async function carregar(){$('msg').innerHTML='<div class="msg in">Carregando dados…</div>';const r=await Dados.base($('fonte').value);
+ const mock=Dados.mat().filter(x=>!x.excluido_em).map(x=>({consultor:x.consultor,gestor:x.gestor,registrado_em:x.registrado_em,candidato:x.candidato}));
+ BASE=r.rows.concat(mock);FONTE=r.fonte;$('fonte').value=r.fonte;const gv=$('fg').value;
+ $('fg').innerHTML='<option value="">Todos</option>'+[...new Set(BASE.map(x=>x.gestor).filter(Boolean))].sort().map(x=>`<option>${esc(x)}</option>`).join('');$('fg').value=gv;
+ $('msg').innerHTML=r.aviso?`<div class="msg er">${esc(r.aviso)}</div>`:'';
+ $('sub').textContent=`Fonte: ${r.fonte==='real'?'banco real (somente leitura)':'amostra local'} · ${nf(BASE.length)} registros na base${mock.length?` (${mock.length} do protótipo)`:''} · atualizado às ${new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}`;desenhar()}
+Auth.ready.then(async()=>{const u=Auth.require(['gestor','admin']);topo(u,'dashboard.html');await Proc.carregar();
+ $('fp').innerHTML='<option value="">Todos / por período</option>'+Proc.C.map(c=>`<option value="${c.n}">Processo ${c.rot}</option>`).join('');carregar();setInterval(()=>{if(!document.hidden)carregar()},5*60*1000)});
+</script></body></html>

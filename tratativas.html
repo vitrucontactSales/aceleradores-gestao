@@ -1,0 +1,93 @@
+<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Aprovações — Portal Aceleradores (protótipo)</title><link rel="stylesheet" href="common.css">
+<style>
+.bar-f{display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap;padding:16px 18px;margin-bottom:20px}.bar-f>div{min-width:140px;flex:1}.bar-f label{margin-top:0}.bar-f input,.bar-f select{height:42px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:20px}.kpi{background:var(--surf);border:1px solid var(--line);border-radius:var(--r);padding:16px 20px;border-top:3px solid var(--navy)}
+.kpi .l{font-size:.72rem;text-transform:uppercase;letter-spacing:.09em;color:var(--mut);font-weight:650}.kpi .v{font-size:1.9rem;font-weight:650;letter-spacing:-.02em}
+.tbl-wrap{overflow:auto;max-height:640px;border:1px solid var(--line);border-radius:var(--r)}.tbl-wrap th{position:sticky;top:0}
+td input{height:34px;padding:4px 8px;min-width:130px}td input.bad{border-color:var(--er)}
+.st{display:inline-block;padding:3px 9px;border-radius:3px;font-size:.76rem;font-weight:650;white-space:nowrap}
+.st.p{background:#fff4d6;color:#7a4b00}.st.a{background:#ecfdf3;color:#085d3a}.st.r{background:#fef3f2;color:#912018}
+td .acts{display:flex;gap:6px;white-space:nowrap}td button{padding:5px 10px;font-size:.8rem}button.ok{background:var(--ok);border-color:var(--ok)}
+.pg{display:flex;gap:10px;align-items:center;justify-content:flex-end;margin-top:12px;font-size:.85rem}
+dialog{border:1px solid var(--line);border-radius:var(--r);padding:22px;max-width:420px;width:92vw}dialog::backdrop{background:rgba(15,31,77,.35)}
+</style></head><body><main>
+<h1>Aprovação de matrículas</h1><p class="mut" id="sub">Carregando…</p><div id="msg"></div>
+<section class="card bar-f" aria-label="Filtros">
+<div><label for="fg">Gestor</label><select id="fg"><option value="">Todos</option></select></div>
+<div><label for="fc">Consultor</label><select id="fc"><option value="">Todos</option></select></div>
+<div><label for="nc">Nº do candidato</label><input id="nc" inputmode="numeric" placeholder="Ex.: 202751…" autocomplete="off"></div>
+<div><label for="cp">CPF do candidato</label><input id="cp" inputmode="numeric" placeholder="000.000.000-00" autocomplete="off"></div>
+<div><label for="mt">Matrícula</label><input id="mt" placeholder="Nº da matrícula" autocomplete="off"></div>
+<div><label for="fs">Situação</label><select id="fs"><option value="">Todas</option><option value="pendente">Pendente</option><option value="aprovado">Aprovado</option><option value="reprovado">Reprovado</option></select></div>
+<div><label for="fp">Processo</label><select id="fp"><option value="">Todos</option></select></div>
+<div style="flex:0 0 auto;display:flex;gap:8px"><button class="sec" id="lim" type="button">Limpar</button><button id="xl" type="button">Exportar Excel (.xlsx)</button></div></section>
+<div class="kpis" id="kpis"></div>
+<section class="card"><div class="tbl-wrap"><table id="t"></table></div><div class="pg"><span id="pgI"></span><button class="sec" id="ant" type="button">‹</button><button class="sec" id="prox" type="button">›</button></div></section>
+</main>
+<dialog id="dlg"><form method="dialog"><h1>Reprovar matrícula</h1><p class="mut" id="dQ"></p><label for="dM">Motivo</label><textarea id="dM" rows="3" required></textarea><div style="display:flex;gap:10px;justify-content:flex-end;margin-top:14px"><button class="sec" value="x" formnovalidate>Cancelar</button><button class="dg" id="dOk" value="ok">Reprovar</button></div></form></dialog>
+<script src="vendor/exceljs.min.js"></script><script src="config.js"></script><script src="auth.js"></script><script src="common.js"></script><script src="data.js"></script><script src="sample.js"></script><script src="processos.js"></script><script>
+const $=i=>document.getElementById(i),TAM=50,LAB={pendente:['p','⏳ Pendente'],aprovado:['a','✔ Aprovado'],reprovado:['r','✖ Reprovado']};
+let me,ALL=[],FIL=[],pag=0,alvo=null;
+const dig=s=>String(s||'').replace(/\D/g,''),norm=s=>String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+const m=(t,c)=>$('msg').innerHTML=t?`<div class="msg ${c}">${esc(t)}</div>`:'';
+const dt=s=>s?s.slice(8,10)+'/'+s.slice(5,7)+'/'+s.slice(0,4):'';
+function opcoes(){const g=$('fg').value,gv=$('fg').value,c=$('fc').value,u=k=>[...new Set(ALL.filter(r=>k==='c'?(!gv||r.gestor===gv):true).map(r=>k==='g'?r.gestor:r.consultor).filter(Boolean))].sort((x,y)=>x.localeCompare(y,'pt'));
+ const f=(id,l,v)=>{$(id).innerHTML='<option value="">Todos</option>'+l.map(x=>`<option${x===v?' selected':''}>${esc(x)}</option>`).join('')};f('fg',u('g'),g);f('fc',u('c'),u('c').includes(c)?c:'')}
+function filtrar(){const T=Trat.todos(),g=$('fg').value,co=$('fc').value,nc=dig($('nc').value),cp=dig($('cp').value),mt=norm($('mt').value.trim()),fs=$('fs').value,c=Proc.C.find(x=>String(x.n)===$('fp').value);
+ FIL=ALL.filter(r=>{const t=T[r.id]||{},st=t.status||'pendente',d=(r.data_pagamento||r.registrado_em||'').slice(0,10);
+  return(!fs||st===fs)&&(!c||(d>=c.ini&&d<=c.fim))&&(!g||r.gestor===g)&&(!co||r.consultor===co)&&(!nc||dig(r.candidato).includes(nc))&&(!cp||dig(t.cpf).includes(cp))&&(!mt||norm(t.matricula).includes(mt))});
+ FIL.sort((a,b)=>String(b.registrado_em).localeCompare(String(a.registrado_em)));desenhar()}
+function desenhar(){const T=Trat.todos(),n=FIL.length,cont={pendente:0,aprovado:0,reprovado:0};FIL.forEach(r=>cont[(T[r.id]||{}).status||'pendente']++);
+ const mx=Math.max(0,Math.ceil(n/TAM)-1);pag=Math.min(pag,mx);
+ $('kpis').innerHTML=[['Registros',n],['Pendentes',cont.pendente],['Aprovados',cont.aprovado],['Reprovados',cont.reprovado]].map(([l,v])=>`<div class="kpi"><div class="l">${l}</div><div class="v">${v.toLocaleString('pt-BR')}</div></div>`).join('');
+ const pg=FIL.slice(pag*TAM,pag*TAM+TAM);
+ $('t').innerHTML=`<thead><tr><th>Registro</th><th>Consultor</th><th>Gestor</th><th>Nº candidato</th><th>CPF do novo aluno</th><th>Matrícula</th><th>Situação</th><th>Ação Auditoria</th></tr></thead><tbody>${pg.map(r=>{const t=T[r.id]||{},st=t.status||'pendente',[k,l]=LAB[st];
+  return`<tr data-id="${esc(r.id)}"><td>${dt(r.registrado_em)}${r.link_conversa?` <a href="${esc(r.link_conversa)}" target="_blank" rel="noopener" title="Abrir conversa">↗</a>`:''}</td><td>${esc(r.consultor)}</td><td>${esc(r.gestor||'—')}</td><td>${esc(r.candidato||'—')}</td>
+  <td><input data-f="cpf" value="${esc(Trat.mask(t.cpf))}" placeholder="000.000.000-00" inputmode="numeric" aria-label="CPF"></td><td><input data-f="matricula" value="${esc(t.matricula||'')}" placeholder="Nº da matrícula" aria-label="Matrícula"></td>
+  <td><span class="st ${k}">${l}</span>${t.por?`<div class="mut" style="font-size:.72rem">${esc(t.por)} · ${dt((t.em||'').slice(0,10))}</div>`:''}${t.motivo?`<div class="mut" style="font-size:.72rem" title="${esc(t.motivo)}">Motivo: ${esc(t.motivo.slice(0,40))}</div>`:''}</td>
+  <td><div class="acts">${st!=='aprovado'?'<button class="ok" data-a="aprovado">Aprovar</button>':''}${st!=='reprovado'?'<button class="dg" data-a="reprovado">Reprovar</button>':''}${st!=='pendente'?'<button class="sec" data-a="pendente">Desfazer</button>':''}</div></td></tr>`}).join('')||'<tr><td colspan="8" class="mut" style="text-align:center;padding:30px">Nenhum registro encontrado.</td></tr>'}</tbody>`;
+ $('pgI').textContent=n?`${pag*TAM+1}–${Math.min(n,pag*TAM+TAM)} de ${n.toLocaleString('pt-BR')}`:'';$('ant').disabled=pag<=0;$('prox').disabled=pag>=mx}
+function decidir(id,status,motivo){Trat.set(id,{status,motivo:motivo||'',por:me.nome,em:new Date().toISOString()});m(status==='pendente'?'Decisão desfeita.':'Registro '+status+'.','ok');filtrar()}
+document.addEventListener('click',e=>{const b=e.target.closest('button[data-a]');if(!b)return;const id=b.closest('tr').dataset.id;
+ if(b.dataset.a==='reprovado'){alvo=id;const r=ALL.find(x=>String(x.id)===id);$('dQ').textContent=(r.consultor||'')+' · candidato '+(r.candidato||'—');$('dM').value='';$('dlg').showModal()}else decidir(id,b.dataset.a)});
+$('dlg').addEventListener('close',()=>{if($('dlg').returnValue==='ok'&&$('dM').value.trim())decidir(alvo,'reprovado',$('dM').value.trim())});
+document.addEventListener('change',e=>{const i=e.target;if(!i.dataset.f)return;const id=i.closest('tr').dataset.id;
+ if(i.dataset.f==='cpf'){const v=dig(i.value);if(v&&!Trat.cpfOk(v)){i.classList.add('bad');m('CPF inválido — confira os 11 dígitos.','er');return}i.classList.remove('bad');m('');Trat.set(id,{cpf:v});i.value=Trat.mask(v)}
+ else{Trat.set(id,{matricula:i.value.trim()});i.value=i.value.trim()}});
+['nc','cp','mt'].forEach(i=>$(i).oninput=()=>{pag=0;filtrar()});$('fg').onchange=()=>{pag=0;opcoes();filtrar()};['fc','fs','fp'].forEach(i=>$(i).onchange=()=>{pag=0;filtrar()});
+$('lim').onclick=()=>{['nc','cp','mt','fg','fc','fs','fp'].forEach(i=>$(i).value='');pag=0;opcoes();filtrar()};
+const U=v=>{const x=new Date(v);return v.length<=10?new Date(v+'T00:00:00Z'):new Date(Date.UTC(x.getFullYear(),x.getMonth(),x.getDate(),x.getHours(),x.getMinutes()))}; // Excel não tem fuso: grava a hora local como está
+async function exportar(){const T=Trat.todos(),W=new ExcelJS.Workbook(),NAVY='FF0F1F4D',agora=new Date();
+ W.creator=me.nome;W.created=agora;
+ const ws=W.addWorksheet('Aprovações',{views:[{state:'frozen',ySplit:5,xSplit:2}]}),cols=[['Registro',13],['Consultor',34],['Gestor',30],['Nº candidato',16],['CPF do novo aluno',18],['Matrícula',16],['Situação',14],['Decidido por',28],['Decidido em',17],['Motivo da reprovação',40],['Conversa',12],['Ação Auditoria',18]];
+ ws.columns=cols.map(([,w])=>({width:w}));
+ ws.mergeCells('A1:L1');ws.getCell('A1').value='Aprovação de matrículas — Portal Aceleradores';ws.getCell('A1').font={name:'Calibri',size:16,bold:true,color:{argb:NAVY}};ws.getRow(1).height=26;
+ const filt=[['Gestor',$('fg').value],['Consultor',$('fc').value],['Nº candidato',$('nc').value],['CPF',$('cp').value],['Matrícula',$('mt').value],['Situação',$('fs').value],['Processo',$('fp').value&&'Processo '+(Proc.C.find(c=>String(c.n)===$('fp').value)||{}).rot]].filter(f=>f[1]).map(f=>f.join(': ')).join('  ·  ')||'sem filtros';
+ ws.mergeCells('A2:L2');ws.getCell('A2').value='Filtros: '+filt+(me.perfil==='gestor'?'  ·  Equipe de '+me.nome:'');ws.getCell('A2').font={italic:true,color:{argb:'FF5B6678'}};
+ ws.mergeCells('A3:L3');ws.getCell('A3').value='Gerado por '+me.nome+' em '+agora.toLocaleString('pt-BR')+' — contém CPF (dado pessoal): uso restrito.';ws.getCell('A3').font={size:9,color:{argb:'FF98A2B3'}};
+ const h=ws.getRow(5);cols.forEach(([t],i)=>{const c=h.getCell(i+1);c.value=t;c.font={bold:true,color:{argb:'FFFFFFFF'}};c.fill={type:'pattern',pattern:'solid',fgColor:{argb:NAVY}};c.alignment={vertical:'middle',horizontal:'left',wrapText:true};c.border={bottom:{style:'medium',color:{argb:'FFF2B84B'}}}});h.height=24;
+ const COR={aprovado:['FFECFDF3','FF085D3A','Aprovado'],reprovado:['FFFEF3F2','FF912018','Reprovado'],pendente:['FFFFF4D6','FF7A4B00','Pendente']};
+ FIL.forEach((r,i)=>{const t=T[r.id]||{},st=t.status||'pendente',row=ws.getRow(6+i),d=r.registrado_em?U(String(r.registrado_em).replace(' ','T')):null;
+  row.values=[d,r.consultor||'',r.gestor||'',String(r.candidato||''),t.cpf||'',t.matricula||'',COR[st][2],t.por||'',t.em?U(t.em):null,t.motivo||'',r.link_conversa?{text:'Abrir',hyperlink:r.link_conversa}:'',{aprovado:'Aprovou',reprovado:'Reprovou'}[st]||'—'];
+  row.getCell(1).numFmt='dd/mm/yyyy';row.getCell(9).numFmt='dd/mm/yyyy hh:mm';row.getCell(4).numFmt='@';row.getCell(5).numFmt='000"."000"."000"-"00';row.getCell(5).alignment={horizontal:'left'};
+  const s=row.getCell(7);s.fill={type:'pattern',pattern:'solid',fgColor:{argb:COR[st][0]}};s.font={bold:true,color:{argb:COR[st][1]}};s.alignment={horizontal:'center'};
+  if(r.link_conversa)row.getCell(11).font={color:{argb:'FF1D3B8B'},underline:true};
+  row.eachCell({includeEmpty:true},c=>{c.border={bottom:{style:'thin',color:{argb:'FFE4E7EC'}}};if(i%2&&c.col!==7)c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFF7F8FA'}}})});
+ const ult=Math.max(6,5+FIL.length);ws.autoFilter={from:'A5',to:'L'+ult};
+ ws.pageSetup={orientation:'landscape',fitToPage:true,fitToWidth:1,fitToHeight:0,printTitlesRow:'5:5'};
+ const rs=W.addWorksheet('Resumo');rs.columns=[{width:30},{width:14},{width:14}];
+ rs.getCell('A1').value='Resumo por situação';rs.getCell('A1').font={size:14,bold:true,color:{argb:NAVY}};
+ ['Situação','Registros','% do total'].forEach((t,i)=>{const c=rs.getCell(3,i+1);c.value=t;c.font={bold:true,color:{argb:'FFFFFFFF'}};c.fill={type:'pattern',pattern:'solid',fgColor:{argb:NAVY}}});
+ ['Pendente','Aprovado','Reprovado'].forEach((s,i)=>{const r=4+i;rs.getCell(r,1).value=s;rs.getCell(r,2).value={formula:`COUNTIF(Aprovações!$G$6:$G$${ult},A${r})`};rs.getCell(r,3).value={formula:`IF($B$7=0,0,B${r}/$B$7)`};rs.getCell(r,3).numFmt='0.0%'});
+ rs.getCell('A7').value='Total';rs.getCell('B7').value={formula:'SUM(B4:B6)'};rs.getCell('C7').value={formula:'SUM(C4:C6)'};rs.getCell('C7').numFmt='0.0%';['A7','B7','C7'].forEach(a=>{rs.getCell(a).font={bold:true};rs.getCell(a).border={top:{style:'thin'}}});
+ const buf=await W.xlsx.writeBuffer(),a=document.createElement('a');a.href=URL.createObjectURL(new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}));
+ a.download='aprovacoes_'+hojeIso()+'.xlsx';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000)}
+$('xl').onclick=()=>{$('xl').disabled=true;exportar().then(()=>m(FIL.length.toLocaleString('pt-BR')+' registro(s) exportado(s).','ok')).catch(e=>m('Falha ao exportar: '+e.message,'er')).finally(()=>$('xl').disabled=false)};
+$('ant').onclick=()=>{pag--;desenhar()};$('prox').onclick=()=>{pag++;desenhar()};
+Auth.ready.then(async()=>{me=Auth.require(['gestor','admin']);topo(me,'tratativas.html');await Proc.carregar();
+ $('fp').innerHTML='<option value="">Todos</option>'+Proc.C.map(c=>`<option value="${c.n}">Processo ${c.rot}</option>`).join('');
+ const b=await Dados.base('real');ALL=b.rows.map((r,i)=>({...r,id:r.id??('amostra-'+i)}));const G={};ALL.forEach(r=>{if(r.consultor&&r.gestor)G[r.consultor]=r.gestor});
+ ALL=ALL.concat(Dados.mat().map((r,i)=>({...r,id:r.id??('local-'+i),gestor:r.gestor||G[r.consultor]||''})));
+ if(me.perfil==='gestor'){ALL=ALL.filter(r=>norm(r.gestor)===norm(me.nome));$('fg').parentElement.hidden=true}  // gestor vê só a própria equipe (no Supabase: RLS por gestor)
+ $('sub').textContent=(me.perfil==='gestor'?'Equipe de '+me.nome+' · ':'')+(b.fonte==='real'?'Fonte: banco real (somente leitura)':'Fonte: amostra local')+' · aprovação, CPF e matrícula ficam só neste navegador (o banco ainda não tem esses campos)';opcoes();filtrar()});
+</script></body></html>

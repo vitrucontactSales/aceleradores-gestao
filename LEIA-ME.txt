@@ -1,0 +1,12 @@
+PROTÓTIPO — Portal Aceleradores com login por perfil
+Abrir: dê dois cliques em login.html (Chrome). Nada é enviado ao Supabase.
+
+Contas de demonstração (fictícias, só neste navegador):
+  admin@proto.local     Admin#demo1
+  gestor@proto.local    Gestor#demo1
+  consultor@proto.local Consul#demo1
+
+- Dashboard: lê o banco real (somente leitura, chave pública). Se falhar, usa amostra local.
+- Registros/edições/exclusões do formulário ficam só neste navegador (localStorage).
+- sql/acesso.sql + sql/teste.sql: regras de perfis/RLS para o Supabase (testadas em Postgres local, 16/16). NÃO aplicadas.
+- auth.js tem a mesma interface do Supabase Auth, para trocar o miolo depois sem mudar as telas.
