@@ -1,6 +1,6 @@
 /* cabeçalho/menus por perfil */
-function topo(u,ativa){const L={admin:[['index.html','Início'],['formulario.html','Formulário'],['dashboard.html','Dashboard'],['painel.html','Painel de Vendas'],['tratativas.html','Aprovações'],['admin.html','Usuários']],
- gestor:[['index.html','Início'],['formulario.html','Formulário'],['dashboard.html','Dashboard'],['painel.html','Painel de Vendas'],['tratativas.html','Aprovações'],['admin.html','Consultores']],consultor:[['index.html','Início'],['formulario.html','Registrar matrícula']]}[u.perfil];
+function topo(u,ativa){const L={admin:[['index.html','Início'],['formulario.html','Formulário'],['dashboard.html','Dashboard'],['painel.html','Painel de Vendas'],['base.html','Base de dados'],['tratativas.html','Aprovações'],['admin.html','Usuários']],
+ gestor:[['index.html','Início'],['formulario.html','Formulário'],['dashboard.html','Dashboard'],['painel.html','Painel de Vendas'],['base.html','Base de dados'],['tratativas.html','Aprovações'],['admin.html','Consultores']],consultor:[['index.html','Início'],['formulario.html','Registrar matrícula']]}[u.perfil];
  document.body.insertAdjacentHTML('afterbegin',`<div class="proto">PROTÓTIPO — dados reais só para leitura · contas e novos registros ficam apenas neste navegador</div><header class="menu"><b>Portal Aceleradores</b>${L.map(([h,t])=>`<a href="${h}" class="${h===ativa?'on':''}">${t}</a>`).join('')}<span class="sp"></span><span class="mut">${u.nome}</span><span class="tag">${u.perfil}</span><a href="#" id="sair">Sair</a></header>`);
  document.getElementById('sair').onclick=e=>{e.preventDefault();Auth.signOut();location.href='login.html'}}
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
