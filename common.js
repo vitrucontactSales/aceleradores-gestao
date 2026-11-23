@@ -7,3 +7,6 @@ const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&g
 const hojeIso=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
 const brD=s=>s?s.slice(8)+'/'+s.slice(5,7)+'/'+s.slice(0,4):'';
 const CANDIDATO_OK=v=>/^20(2[6-9]|[3-9]\d)/.test(v);
+/* mesmo gestor escrito de formas diferentes no banco -> um nome só (sempre o nome completo) */
+const GESTOR_ALIAS={'Clayton Santos':'Clayton Eugenio Ramos dos Santos','Rafael Pereira':'Rafael Marcos Pereira','Jhonatan Dias':'Jhonatan Erik Ribeiro Dias'};
+const gestorNome=n=>GESTOR_ALIAS[String(n||'').trim()]||n;
