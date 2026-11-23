@@ -601,7 +601,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
   const CAP = { ap: 'Aproveitamento: vendas ÷ atendimentos enviados, por consultor', md: 'Média de vendas por dia útil, por consultor (Acelerador + Topo)', sg: 'Consultores sem gestor e o peso deles no total de vendas', insc: 'Inscritos e vendas do dia, por consultor (Acelerador e Topo)', cic: 'Vendas, meta e situação por consultor em cada processo', cons: 'Consolidado por consultor (Acelerador + Topo)', sem: 'Vendas por semana, meta, Home Office e Folga', dia: 'Vendas por dia (verde = bateu a meta do dia)', ges: 'Resumo por gestor' };
   function renderTab() {
     if (S.tab === 'dis') { renderDis(); return; }
-    if (S.tab === 'insc') $('inscInfo').textContent = !S.insc ? 'Carregue o relatório de inscrições (Candidato, Data Inscrição, Inscrito Por) em "Escolher arquivos".' : S.models.insc ? S.models.insc.note : 'Escolha o dia.';
+    if (S.tab === 'insc') $('inscInfo').textContent = !S.insc ? 'Inscritos ainda não publicados no banco. Importe o relatório de inscrições (Candidato, Data Inscrição, Inscrito Por) na página Base de dados, em "Arquivos"; depois ele aparece aqui para todos.' : S.models.insc ? S.models.insc.note : 'Escolha o dia.';
     if (S.tab === 'ap') S.models.ap = mAprov();
     if (!S.models[S.tab]) { $('tbl').replaceChildren(); if (S.tab === 'ap') $('note').textContent = 'Carregue a listagem de atendimentos em "Escolher arquivos" para calcular o aproveitamento.'; return; }
     const m = S.models[S.tab], box = $('tbl');
