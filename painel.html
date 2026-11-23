@@ -340,29 +340,37 @@ https://github.com/nodeca/pako/blob/main/LICENSE
   }
 
   /* ---------- processos de vendas ---------- */
-  const CICLOS = [51, 52, 53, 54];
-  const CIC_DEF = { 51: ['2026-10-27', '2027-03-22'], 52: ['', ''], 53: ['', ''], 54: ['', ''] }; // em branco: processo sem datas não é analisado
+  const CIC_DEF = { '51.2027': ['2026-10-27', '2027-03-22'], '52.2026': ['2026-03-24', '2026-06-01'], '53.2026': ['2026-06-02', '2026-08-17'], '54.2026': ['2026-08-18', '2026-10-26'] };
+  let CICLOS = Object.keys(CIC_DEF); // lista dinâmica: cada processo = número.ano (ex.: 52.2026), cadastrada na Base de dados
+  const cicId = (n, fim) => /\./.test(String(n)) ? String(n) : String(n) + (/^\d{4}/.test(fim || '') ? '.' + fim.slice(0, 4) : '');
   const ciclos = () => CICLOS.map(n => ({ n, ini: $('c' + n + 'i').value, fim: $('c' + n + 'f').value }));
   const cicOk = c => Core.isKey(c.ini) && Core.isKey(c.fim) && c.ini <= c.fim;
-  function buildCicInputs() {
-    let saved = {}; try { saved = JSON.parse(localStorage.getItem('vendas_ciclos_v2') || '{}'); } catch (e) {}
-    const box = $('cicInputs');
-    setTimeout(updateCicOptions, 0);
-    CICLOS.forEach(n => {
-      const [i0, f0] = saved[n] || CIC_DEF[n];
-      [['i', 'início', i0], ['f', 'fim', f0]].forEach(([k, lb, v]) => {
-        const d = el('div'), l = el('label', '', `Processo ${n}: ${lb}`), inp = el('input'); l.htmlFor = inp.id = 'c' + n + k; inp.type = 'date'; inp.value = v; d.append(l, inp); box.append(d);
-        inp.addEventListener('change', () => {
-          updateCicOptions();
-          try { localStorage.setItem('vendas_ciclos_v2', JSON.stringify(Object.fromEntries(ciclos().map(c => [c.n, [c.ini, c.fim]])))); } catch (e) {}
-          if ($('fCiclo').value == n) applyCicloFilter(); else { S.cic = null; if (S.res) { S.models.cic = mCiclos(); if (S.tab === 'cic') renderTab(); } }
-        });
-      });
-    });
+  function cicMudou(n) {
+    updateCicOptions();
+    try { localStorage.setItem('vendas_ciclos_v2', JSON.stringify(Object.fromEntries(ciclos().map(c => [c.n, [c.ini, c.fim]])))); } catch (e) {}
+    if (n && $('fCiclo').value === n) applyCicloFilter(); else { S.cic = null; if (S.res) { S.models.cic = mCiclos(); if (S.tab === 'cic') renderTab(); } }
   }
-  function updateCicOptions() {
-    const ok = new Set(ciclos().filter(cicOk).map(c => String(c.n)));
-    ['fCiclo', 'cicSel'].forEach(id => { const s = $(id); [...s.options].forEach(o => { if (o.value) o.disabled = !ok.has(o.value); }); if (id === 'cicSel') { if (!s.value || !ok.has(s.value)) s.value = [...ok][0] || ''; } else if (s.selectedOptions[0] && s.selectedOptions[0].disabled) s.value = ''; });
+  function buildCicInputs(data) {
+    if (!data) {
+      let saved = {}; try { saved = JSON.parse(localStorage.getItem('vendas_ciclos_v2') || '{}'); } catch (e) {}
+      data = {}; Object.entries(saved).forEach(([k, v]) => { if (v && v[0]) data[cicId(k, v[1])] = v; });
+      Object.entries(CIC_DEF).forEach(([k, v]) => { if (!data[k]) data[k] = v; });
+    }
+    CICLOS = Object.keys(data).sort((a, b) => ((data[a][0] || '9') < (data[b][0] || '9') ? -1 : 1));
+    const box = $('cicInputs'); box.replaceChildren();
+    CICLOS.forEach(n => [['i', 'início', data[n][0]], ['f', 'fim', data[n][1]]].forEach(([k, lb, v]) => {
+      const d = el('div'), l = el('label', '', 'Processo ' + n + ': ' + lb), inp = el('input'); l.htmlFor = inp.id = 'c' + n + k; inp.type = 'date'; inp.value = v || ''; d.append(l, inp); box.append(d);
+      inp.addEventListener('change', () => cicMudou(n));
+    }));
+    setTimeout(updateCicOptions, 0);
+  }
+  function updateCicOptions() { // filtros listam só os processos com datas válidas, do mais novo para o mais antigo
+    const ok = ciclos().filter(cicOk).sort((a, b) => (a.ini < b.ini ? 1 : -1)), h = new Date().toISOString().slice(0, 10);
+    ['fCiclo', 'cicSel'].forEach(id => {
+      const s = $(id); if (!s) return; const cur = s.value;
+      s.replaceChildren(...(id === 'fCiclo' ? [new Option('Período manual', '')] : []), ...ok.map(c => new Option('Processo ' + c.n, c.n)));
+      if (ok.some(c => c.n === cur)) s.value = cur; else s.value = id === 'cicSel' ? ((ok.find(c => c.ini <= h && h <= c.fim) || ok.find(c => c.ini <= h) || ok[0] || { n: '' }).n) : '';
+    });
   }
   function applyCicloFilter() {
     const v = $('fCiclo').value; if (!v) return;
@@ -502,7 +510,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
   }
   function fillMd() { // opções de semana e mês a partir das datas existentes nos arquivos
     const ds = []; if (S.acel) for (const r of S.acel) ds.push(r.date); if (S.topo) for (const r of S.topo) if (r.mat && r.date) ds.push(r.date);
-    if (!ds.length) return; ds.sort(); const P0 = (S.p && Core.isKey(S.p.ini) && Core.isKey(S.p.fim)) ? S.p : null; let mn = ds[0], mx = ds[ds.length - 1]; if (P0) { if (mn < P0.ini) mn = P0.ini; if (mx > P0.fim) mx = P0.fim; if (mn > mx) { mn = P0.ini; mx = P0.fim; } } // o período/processo escolhido prevalece S.mdMin = mn; S.mdMax = mx; const si = Number($('semIni').value);
+    if (!ds.length) return; ds.sort(); const P0 = (S.p && Core.isKey(S.p.ini) && Core.isKey(S.p.fim)) ? S.p : null; let mn = ds[0], mx = ds[ds.length - 1]; if (P0) { if (mn < P0.ini) mn = P0.ini; if (mx > P0.fim) mx = P0.fim; if (mn > mx) { mn = P0.ini; mx = P0.fim; } } /* o período/processo escolhido prevalece */ S.mdMin = mn; S.mdMax = mx; const si = Number($('semIni').value);
     const ms = [], ws = []; for (let m = mn.slice(0, 7); m <= mx.slice(0, 7); m = Core.addDays(m + '-28', 5).slice(0, 7)) ms.push(m);
     for (let s = Core.addDays(mn, -((Core.dow(mn) - si + 7) % 7)); s <= mx; s = Core.addDays(s, 7)) ws.push([s, Core.addDays(s, 6)]);
     const mes = n => ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'][Number(n.slice(5)) - 1] + '/' + n.slice(0, 4);
@@ -1167,7 +1175,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
   const lerCfg = () => ({ ...Object.fromEntries(CFG_IDS.map(i => [i, $(i).value])), ciclos: Object.fromEntries(CICLOS.map(n => [n, [$('c' + n + 'i').value, $('c' + n + 'f').value]])) });
   function aplicarCfg(c) {
     CFG_IDS.forEach(i => { if (c[i] != null) $(i).value = c[i]; });
-    CICLOS.forEach(n => { const v = c.ciclos && c.ciclos[n]; if (v) { $('c' + n + 'i').value = v[0]; $('c' + n + 'f').value = v[1]; } });
+    if (c.ciclos) { const cur = Object.fromEntries(ciclos().map(x => [x.n, [x.ini, x.fim]])); Object.entries(c.ciclos).forEach(([k, v]) => { if (v && v[0]) cur[cicId(k, v[1])] = v; }); buildCicInputs(cur); }
     try { localStorage.setItem('vendas_ciclos_v2', JSON.stringify(c.ciclos || {})); } catch (e) {}
     updateCicOptions(); S.cic = null;
   }
