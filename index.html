@@ -22,7 +22,7 @@ const COR=['#b7791f','#157347','#7a4fb5','#b42318','#0891b2','#6b7a85'],AZ='#0a4
 const hoje=new Date(Date.now()-3*36e5).toISOString().slice(0,10);
 try{
 const cfg=(await(await fetch(SB+'painel_dados?chave=eq.config&select=valor',{headers:H})).json())[0];const cc=(cfg&&cfg.valor&&cfg.valor.ciclos)||{};
-const P=Object.entries(cc).filter(([n,v])=>/^\d{4}-\d{2}-\d{2}$/.test(v[0])&&/^\d{4}-\d{2}-\d{2}$/.test(v[1])&&v[0]<=v[1]).map(([n,v])=>({n,ini:v[0],fim:v[1],rot:n+'.'+v[1].slice(0,4),dias:idx(v[0],v[1])+1})).sort((a,b)=>a.ini<b.ini?-1:1);
+const P=Object.entries(cc).filter(([n,v])=>/^\d{4}-\d{2}-\d{2}$/.test(v[0])&&/^\d{4}-\d{2}-\d{2}$/.test(v[1])&&v[0]<=v[1]).map(([n,v])=>({n,ini:v[0],fim:v[1],rot:/\./.test(n)?n:n+'.'+v[1].slice(0,4),dias:idx(v[0],v[1])+1})).sort((a,b)=>a.ini<b.ini?-1:1);
 if(P.length<2)return;
 let ds=[],f=0;for(;;){const r=await fetch(SB+'aceleradores_matriculas?select=data_pagamento,gestor&excluido_em=is.null&data_pagamento=gte.'+P[0].ini+'&data_pagamento=lte.'+P[P.length-1].fim,{headers:{...H,Range:f+'-'+(f+999)}});if(!r.ok)throw 0;const j=await r.json();ds=ds.concat(j.map(x=>[x.data_pagamento,gn(x.gestor)]));if(j.length<1000)break;f+=1000}
 const cum=c=>{let a=0;return c.map(v=>a+=v)};
@@ -57,7 +57,7 @@ if(!gs.length){el.innerHTML='<p class="mut">Sem dados.</p>';return}
 const W=640,Ht=300,l=40,r=8,t=22,b=58,pw=W-l-r,ph=Ht-t-b,y=nice(Math.max(1,...gs.flatMap(g=>S.map(p=>val(p,g))))),sy=v=>t+ph-ph*v/y.top,gw=pw/gs.length,bw=Math.min(24,gw*.8/Math.max(1,S.length));
 let s='<svg viewBox="0 0 '+W+' '+Ht+'" style="width:100%;height:auto;display:block" role="img" aria-label="Colunas: matrículas por gestor, uma cor por processo" font-size="11" fill="#55636b">';
 for(let v=0;v<=y.top+1e-9;v+=y.st)s+='<line x1="'+l+'" x2="'+(W-r)+'" y1="'+sy(v)+'" y2="'+sy(v)+'" stroke="#dde3e6"/><text x="'+(l-6)+'" y="'+(sy(v)+4)+'" text-anchor="end">'+nf(v)+'</text>';
-gs.forEach((g,i)=>{const x0=l+gw*i+gw/2-S.length*bw/2,w=g.split(' ');S.forEach((p,k)=>{const v=val(p,g),x=x0+k*bw,h=ph*v/y.top;s+='<rect x="'+x+'" y="'+(t+ph-h)+'" width="'+(bw-2)+'" height="'+h+'" fill="'+p.col+'" rx="2"><title>'+p.rot+' · '+g+': '+nf(v)+' matrículas</title></rect>'+'<text x="'+(x+(bw-2)/2)+'" y="'+(t+ph+13)+'" text-anchor="middle" font-size="10" font-weight="700" fill="'+p.col+'">'+p.n+'</text>'+(v?'<text x="'+(x+(bw-2)/2)+'" y="'+(t+ph-h-4)+'" text-anchor="middle" font-size="9" fill="#101828" font-weight="600">'+nf(v)+'</text>':'')});
+gs.forEach((g,i)=>{const x0=l+gw*i+gw/2-S.length*bw/2,w=g.split(' ');S.forEach((p,k)=>{const v=val(p,g),x=x0+k*bw,h=ph*v/y.top;s+='<rect x="'+x+'" y="'+(t+ph-h)+'" width="'+(bw-2)+'" height="'+h+'" fill="'+p.col+'" rx="2"><title>'+p.rot+' · '+g+': '+nf(v)+' matrículas</title></rect>'+'<text x="'+(x+(bw-2)/2)+'" y="'+(t+ph+13)+'" text-anchor="middle" font-size="10" font-weight="700" fill="'+p.col+'">'+parseInt(p.n)+'</text>'+(v?'<text x="'+(x+(bw-2)/2)+'" y="'+(t+ph-h-4)+'" text-anchor="middle" font-size="9" fill="#101828" font-weight="600">'+nf(v)+'</text>':'')});
 s+='<text x="'+(l+gw*i+gw/2)+'" y="'+(Ht-22)+'" text-anchor="middle" font-weight="600" fill="#101828">'+w[0]+'</text><text x="'+(l+gw*i+gw/2)+'" y="'+(Ht-8)+'" text-anchor="middle">'+(w.length>1?w[w.length-1]:'')+'</text>'});
 el.innerHTML=s+'</svg>'}
 const tudo=()=>{porProcesso();porGestor()};
