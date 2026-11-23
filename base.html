@@ -219,26 +219,40 @@ header.menu .tag{font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;
   }
 
   /* ---------- processos de vendas ---------- */
-  const CICLOS = [51, 52, 53, 54];
-  const CIC_DEF = { 51: ['2026-10-27', '2027-03-22'], 52: ['2026-03-24', '2026-06-01'], 53: ['2026-06-02', '2026-08-17'], 54: ['2026-08-18', '2026-10-26'] }; // em branco: processo sem datas não é analisado
+  const CIC_DEF = { '51.2027': ['2026-10-27', '2027-03-22'], '52.2026': ['2026-03-24', '2026-06-01'], '53.2026': ['2026-06-02', '2026-08-17'], '54.2026': ['2026-08-18', '2026-10-26'] };
+  let CICLOS = Object.keys(CIC_DEF); // lista dinâmica: cada processo = número.ano (ex.: 52.2026); dá para adicionar e remover
+  const cicId = (n, fim) => /\./.test(String(n)) ? String(n) : String(n) + (/^\d{4}/.test(fim || '') ? '.' + fim.slice(0, 4) : '');
   const ciclos = () => CICLOS.map(n => ({ n, ini: $('c' + n + 'i').value, fim: $('c' + n + 'f').value }));
   const cicOk = c => Core.isKey(c.ini) && Core.isKey(c.fim) && c.ini <= c.fim;
-  function buildCicInputs() {
-    let saved = {}; try { saved = JSON.parse(localStorage.getItem('vendas_ciclos_v2') || '{}'); } catch (e) {}
-    const box = $('cicInputs');
-    CICLOS.forEach(n => {
-      const [i0, f0] = (saved[n] && saved[n][0]) ? saved[n] : CIC_DEF[n];
-      [['i', 'início', i0], ['f', 'fim', f0]].forEach(([k, lb, v]) => {
-        const d = el('div'), l = el('label', '', `Processo ${n}: ${lb}`), inp = el('input'); l.htmlFor = inp.id = 'c' + n + k; inp.type = 'date'; inp.value = v; d.append(l, inp); box.append(d);
-        inp.addEventListener('change', () => guardarLocal());
-      });
-    });
+  const cicAtual = () => Object.fromEntries(ciclos().map(c => [c.n, [c.ini, c.fim]]));
+  function buildCicInputs(data) {
+    if (!data) {
+      let saved = {}; try { saved = JSON.parse(localStorage.getItem('vendas_ciclos_v2') || '{}'); } catch (e) {}
+      data = {}; Object.entries(saved).forEach(([k, v]) => { if (v && v[0]) data[cicId(k, v[1])] = v; });
+      Object.entries(CIC_DEF).forEach(([k, v]) => { if (!data[k]) data[k] = v; });
+    }
+    CICLOS = Object.keys(data).sort((a, b) => ((data[a][0] || '9') < (data[b][0] || '9') ? -1 : 1));
+    const box = $('cicInputs'); box.replaceChildren();
+    CICLOS.forEach(n => [['i', 'início', data[n][0]], ['f', 'fim', data[n][1]]].forEach(([k, lb, v]) => {
+      const d = el('div'), l = el('label', '', 'Processo ' + n + ': ' + lb), inp = el('input'); l.htmlFor = inp.id = 'c' + n + k; inp.type = 'date'; inp.value = v || ''; d.append(l, inp);
+      if (k === 'f') { const x = el('button', 'btn', 'remover'); x.type = 'button'; x.style.cssText = 'margin-top:4px;font-size:12px;padding:2px 8px'; x.onclick = () => { if (!confirm('Remover o processo ' + n + '?')) return; const cur = cicAtual(); delete cur[n]; buildCicInputs(cur); if (window.__cfgChanged) window.__cfgChanged(); }; d.append(x); }
+      box.append(d);
+    }));
+    const add = el('div'); add.style.cssText = 'grid-column:1/-1;display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;margin-top:8px;padding-top:10px;border-top:1px dashed var(--line)';
+    add.innerHTML = '<div><label for="nvN">Novo processo: nº</label><input id="nvN" type="number" min="1" step="1" style="width:90px"></div><div><label for="nvI">Início</label><input id="nvI" type="date"></div><div><label for="nvF">Fim</label><input id="nvF" type="date"></div><button type="button" class="btn" id="nvB">+ Adicionar processo</button><span class="hint" id="nvM"></span>';
+    box.append(add);
+    $('nvB').onclick = () => {
+      const n = parseInt($('nvN').value, 10), i = $('nvI').value, f = $('nvF').value, m = $('nvM');
+      if (!n || !Core.isKey(i) || !Core.isKey(f) || i > f) { m.textContent = 'Informe o número, o início e o fim (início até o fim).'; return; }
+      const id = n + '.' + f.slice(0, 4); if (CICLOS.includes(id)) { m.textContent = 'O processo ' + id + ' já existe: altere as datas dele acima.'; return; }
+      const cur = cicAtual(); cur[id] = [i, f]; buildCicInputs(cur); if (window.__cfgChanged) window.__cfgChanged();
+    };
   }
   const CFG_IDS = ['metaDia', 'ho', 'folga', 'semIni', 'fer', 'alias', 'jornada'];
   const lerCfg = () => ({ ...Object.fromEntries(CFG_IDS.map(i => [i, $(i).value])), ciclos: Object.fromEntries(CICLOS.map(n => [n, [$('c' + n + 'i').value, $('c' + n + 'f').value]])) });
   function aplicarCfg(c) {
     CFG_IDS.forEach(i => { if (c[i] != null) $(i).value = c[i]; });
-    CICLOS.forEach(n => { const v = c.ciclos && c.ciclos[n]; if (v && v[0]) { $('c' + n + 'i').value = v[0]; $('c' + n + 'f').value = v[1]; } });
+    if (c.ciclos) { const cur = cicAtual(); Object.entries(c.ciclos).forEach(([k, v]) => { if (v && v[0]) cur[cicId(k, v[1])] = v; }); buildCicInputs(cur); }
   }
   const guardarLocal = () => { try { const c = lerCfg(); localStorage.setItem('vendas_cfg', JSON.stringify(c)); localStorage.setItem('vendas_alias', c.alias); localStorage.setItem('vendas_fer', c.fer); localStorage.setItem('vendas_jornada', c.jornada); localStorage.setItem('vendas_ciclos_v2', JSON.stringify(c.ciclos)); } catch (e) {} };
   const JORNADA_DEF = "Celia de Souza Lima ; 08:00:00 ; 14:00:00\nNeide Dagues Costa ; 08:00:00 ; 14:00:00\nVanusa Silvino ; 18:00:00 ; 23:59:59\nTalita Araujo Dos Santos ; 08:00:00 ; 14:00:00\nBeatriz de Oliveira Xavier ; 08:00:00 ; 14:00:00\nAndreia Ferreira de Oliveira ; 18:00:00 ; 23:59:59\nWillyan Gabriel Lopes Moreira De Almeida ; 08:00:00 ; 14:00:00\nMarcos Vinícius Ferreira Fontes ; 15:00:00 ; 21:00:00\nJULIA CAROLINE DA SILVA PESSOA ; 14:00:00 ; 20:00:00\nJOYCE ANDRESSA DA SILVA VALENTINO ; 15:00:00 ; 21:00:00\nSTHEFANNY DAYANNE DA SILVA ROBERTO ; 14:00:00 ; 20:00:00\nLEANDRA SANTOS LORENZETTI ; 08:00:00 ; 14:00:00\nGustavo Qualho Cazoni ; 08:00:00 ; 14:00:00\nVICTOR KENDY KOZINA ; 14:00:00 ; 20:00:00\nLucas Brito Medeiros Da Silva ; 15:00:00 ; 21:00:00\nEmily Emanuelly de Souza ; 15:00:00 ; 21:00:00\nAlessandra Rosa Cabral ; 15:00:00 ; 21:00:00\nMaria Victoria Marques ; 08:00:00 ; 14:00:00\nJulya Amanda Almeida Silva ; 14:00:00 ; 20:00:00\nAna Claudia Monteiro De Vasconcelos ; 08:00:00 ; 14:00:00\nERICK ALEXSANDER NASCIMENTO DOS SANTOS ; 08:00:00 ; 14:00:00\nPedro Henrique Ribeiro dos Santos ; 14:00:00 ; 20:00:00\nCAROLINE SILVA SANTOS ; 14:00:00 ; 20:00:00\nFernanda Magioto ; 08:00:00 ; 14:00:00\nIngrid Kawane Ribeiro Moreira ; 08:00:00 ; 14:00:00\nThayssa Victoria da Silva Pereira ; 14:00:00 ; 20:00:00\nGLACIANE CRISTINA DA SILVA ; 08:00:00 ; 14:00:00\nMaria Eduarda Toledo de Oliveira ; 14:00:00 ; 20:00:00\nHenrique Caua Cupertino Navarro ; 14:00:00 ; 20:00:00\nSABRINA MANOELA DOS SANTOS LIMA ; 14:00:00 ; 20:00:00\nSarah da Silva Purnucena ; 08:00:00 ; 14:00:00\nRosa Caroline Benedito ; 08:00:00 ; 14:00:00\nGiovanna Cadide Cabral ; 08:00:00 ; 14:00:00\nJulie Ndinga Zeferino da Silva ; 08:00:00 ; 14:00:00\nTHAILA LORRAINE RODRIGUES CORDEIRO ; 14:00:00 ; 20:00:00";
@@ -271,7 +285,7 @@ header.menu .tag{font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;
     let c = null; try { c = JSON.parse(localStorage.getItem('vendas_cfg') || 'null'); } catch (e) {}
     $('alias').value = 'GUSTAVO CAZONI = GUSTAVO QUALHO CAZONI\nMARIA EDUARDA TOLEDO OLIVEIRA = MARIA EDUARDA TOLEDO DE OLIVEIRA'; $('fer').value = '02/11/2026'; $('jornada').value = JORNADA_DEF;
     buildCicInputs(); if (c) aplicarCfg(c);
-    [...CFG_IDS, ...CICLOS.flatMap(n => ['c' + n + 'i', 'c' + n + 'f'])].forEach(id => $(id).addEventListener('input', () => { guardarLocal(); agendar(); }));
+    window.__cfgChanged = () => { guardarLocal(); agendar(); }; document.addEventListener('input', ev => { const id = ev.target.id || ''; if (CFG_IDS.includes(id) || /^c\d.*[if]$/.test(id)) window.__cfgChanged(); });
     let tmr; const agendar = () => { clearTimeout(tmr); $('shInfo').textContent = 'Salvando parâmetros…'; tmr = setTimeout(() => publicar([['config', lerCfg()]]), 1500); }; // salva sozinho 1,5 s depois da última edição
     const a = await IDB.get('atend').catch(() => null); if (a) { S.atend = a.rows; status('stAtend', `✓ ${a.rows.length.toLocaleString('pt-BR')} atendimentos · só neste computador (${quando(a.em)})`, true); }
     await atualizar(!c);
