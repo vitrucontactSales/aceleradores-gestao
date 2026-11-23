@@ -104,7 +104,7 @@ header.menu .tag{font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;
   <section class="card" id="sec-arq" aria-labelledby="h-arq">
     <div class="arq" id="zDrop">
       <h2 id="h-arq">1. Arquivos base</h2>
-      <input class="vh" type="file" id="fArq" multiple><label class="btn" for="fArq">Escolher arquivos…</label> <button class="btn sec" type="button" id="btnSb">↻ Atualizar do banco</button> <button class="btn sec" type="button" id="btnPubTopo">⬆ Publicar Topo e Inscritos para todos</button> <button class="btn sec" type="button" id="btnPubCfg">💾 Salvar parâmetros para todos</button>
+      <input class="vh" type="file" id="fArq" multiple><label class="btn" for="fArq">Escolher arquivos…</label> <button class="btn sec" type="button" id="btnSb">↻ Atualizar do banco</button> <button class="btn sec" type="button" id="btnPubCfg">💾 Salvar parâmetros para todos</button>
       <p class="hint" id="shInfo" role="status"></p>
       <p class="st" id="stAcel" role="status" aria-live="polite"><b>Acelerador:</b> aguardando…</p>
       <p class="st" id="stTopo" role="status" aria-live="polite"><b>Topo:</b> aguardando…</p>
@@ -181,6 +181,21 @@ header.menu .tag{font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;
     const r = Core.parseAceleradorObjs(Core.matrixToObjs(mx, det.h));
     return { tipo: 'acel', rows: r.rows, bad: r.bad };
   }
+  async function mesclarPublicar(tipo, r, f, em) {
+    const chave = tipo, stId = tipo === 'topo' ? 'stTopo' : 'stInsc';
+    const mk = x => tipo === 'topo' ? { id: x.id, nome: x.nome, qual: x.qual, mat: x.mat, date: x.date, dq: x.dq } : { id: x.id, date: x.date, nome: x.nome }; // só estes campos: nada de CPF
+    const { data, error } = await SB.from('painel_dados').select('valor').eq('chave', chave).maybeSingle(); if (error) throw error;
+    const mapa = new Map(((data && data.valor.rows) || []).filter(x => x.id != null).map(x => [String(x.id), x]));
+    let add = 0, upd = 0, igu = 0;
+    for (const x of r.rows.map(mk)) { const k = String(x.id), a = mapa.get(k); if (!a) add++; else if (JSON.stringify(a) === JSON.stringify(x)) igu++; else upd++; mapa.set(k, x); } // mesmo id = mesma linha (a mais nova vence)
+    const rows = [...mapa.values()];
+    if (add || upd || !data) {
+      const { error: e2 } = await SB.from('painel_dados').upsert({ chave, valor: tipo === 'topo' ? { rows, temDq: !!r.temDq } : { rows }, atualizado_por: meuNome() || 'gestor', atualizado_em: new Date().toISOString() }); if (e2) throw e2;
+    }
+    if (tipo === 'topo') { S.topo = rows; S.temDq = !!r.temDq; } else S.insc = rows;
+    await IDB.set(tipo, tipo === 'topo' ? { rows, temDq: !!r.temDq, em } : { rows, em });
+    status(stId, `✓ ${f.name.length > 24 ? f.name.slice(0, 22) + '…' : f.name}: ${add.toLocaleString('pt-BR')} novos · ${upd.toLocaleString('pt-BR')} atualizados · ${igu.toLocaleString('pt-BR')} já existiam (ignorados) · base com ${rows.length.toLocaleString('pt-BR')} · salvo para todos`, true);
+  }
   async function handleFiles(files) {
     $('stGeral').textContent = ''; const erros = [];
     for (const f of files) {
@@ -190,9 +205,8 @@ header.menu .tag{font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;
         const txt = `✓ ${r.rows.length.toLocaleString('pt-BR')} ${r.tipo === 'acel' ? 'registros' : r.tipo === 'atend' ? 'atendimentos' : r.tipo === 'insc' ? 'inscritos' : 'candidatos'}` + (r.bad ? ` (${r.bad} ignorados)` : '') + ` · ${f.name.length > 24 ? f.name.slice(0, 22) + '…' : f.name} · ainda não publicado`;
         const em = new Date().toISOString();
         if (r.tipo === 'acel') { status('stAcel', 'este arquivo é lido do banco; o Acelerador não precisa ser importado.', false); }
-        else if (r.tipo === 'insc') { S.insc = r.rows; status('stInsc', txt, true); await IDB.set('insc', { rows: r.rows, em }); }
+        else if (r.tipo === 'insc' || r.tipo === 'topo') { await mesclarPublicar(r.tipo, r, f, em); }
         else if (r.tipo === 'atend') { S.atend = r.rows; status('stAtend', txt.replace(' · ainda não publicado', ' · só neste computador'), true); await IDB.set('atend', { rows: r.rows, em }); }
-        else { S.topo = r.rows; S.temDq = !!r.temDq; status('stTopo', txt + (r.temDq ? ' · com Data Qualificado' : ' · sem Data Qualificado'), true); await IDB.set('topo', { rows: r.rows, temDq: !!r.temDq, em }); }
       } catch (e) { erros.push(`${f.name}: ${e.message}`); }
     }
     $('stGeral').textContent = erros.join(' | ');
@@ -260,12 +274,6 @@ header.menu .tag{font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;
     [...CFG_IDS, ...CICLOS.flatMap(n => ['c' + n + 'i', 'c' + n + 'f'])].forEach(id => $(id).addEventListener('input', guardarLocal));
     $('btnSb').addEventListener('click', () => atualizar(true));
     $('btnPubCfg').addEventListener('click', () => publicar([['config', lerCfg()]]));
-    $('btnPubTopo').addEventListener('click', () => {
-      const it = []; if (S.topo) it.push(['topo', { rows: S.topo.map(r => ({ nome: r.nome, qual: r.qual, mat: r.mat, date: r.date, dq: r.dq })), temDq: !!S.temDq }]); // só estes campos: nada de CPF
-      if (S.insc) it.push(['insc', { rows: S.insc }]);
-      if (!it.length) { $('stGeral').textContent = 'Carregue o Topo ou os Inscritos antes de publicar.'; return; }
-      publicar(it);
-    });
     const a = await IDB.get('atend').catch(() => null); if (a) { S.atend = a.rows; status('stAtend', `✓ ${a.rows.length.toLocaleString('pt-BR')} atendimentos · só neste computador (${quando(a.em)})`, true); }
     await atualizar(!c);
   });
