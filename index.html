@@ -56,16 +56,17 @@ const tot=p.a[p.len-1]||1,mm=g=>{const o=ant.filter(q=>q!==p&&q.g[g]).map(q=>cum
 $('cmpGT').innerHTML='<tr style="text-align:left;color:var(--mut);border-bottom:1px solid var(--line)"><th>Gestor</th><th style="text-align:right">No dia '+Lp+'</th><th style="text-align:right">Total</th><th style="text-align:right">% do processo</th><th style="text-align:right">vs anteriores</th></tr>'+lin.map(x=>{const a=x.a[Lp-1],t=x.a[x.a.length-1],mg=isCur?mm(x.g):0,d=mg?(a/mg-1)*100:null;return '<tr style="border-bottom:1px solid var(--line)"><td><b style="color:'+gcol(x.g)+'">● </b>'+x.g+'</td><td style="text-align:right">'+nf(a)+'</td><td style="text-align:right">'+nf(t)+'</td><td style="text-align:right">'+(t/tot*100).toFixed(1).replace('.',',')+'%</td><td style="text-align:right;color:'+(d==null?'inherit':d>=0?'#157347':'#b42318')+'">'+(d==null?'—':(d>=0?'+':'')+d.toFixed(0)+'%')+'</td></tr>'}).join('')}
 function barras(el){const full=$('cmpF').checked,S=P.filter(p=>sel.has(p.n)),val=(p,g)=>{const c=p.g[g];if(!c)return 0;const a=cum(c);return a[full?a.length-1:Math.min(L,p.len)-1]},gs=[...new Set(S.flatMap(p=>Object.keys(p.g)))].filter(g=>S.some(p=>val(p,g)>0)).sort((a,b)=>val(cur,b)-val(cur,a)||Math.max(...S.map(p=>val(p,b)))-Math.max(...S.map(p=>val(p,a))));
 if(!gs.length){el.innerHTML='<p class="mut">Sem dados.</p>';return}
-const W=640,Ht=300,l=40,r=8,t=22,b=44,pw=W-l-r,ph=Ht-t-b,y=nice(Math.max(1,...gs.flatMap(g=>S.map(p=>val(p,g))))),sy=v=>t+ph-ph*v/y.top,gw=pw/gs.length,bw=Math.min(24,gw*.8/Math.max(1,S.length));
+const W=640,Ht=300,l=40,r=8,t=22,b=58,pw=W-l-r,ph=Ht-t-b,y=nice(Math.max(1,...gs.flatMap(g=>S.map(p=>val(p,g))))),sy=v=>t+ph-ph*v/y.top,gw=pw/gs.length,bw=Math.min(24,gw*.8/Math.max(1,S.length));
 let s='<svg viewBox="0 0 '+W+' '+Ht+'" style="width:100%;height:auto;display:block" role="img" aria-label="Colunas: matrículas por gestor, uma cor por processo" font-size="11" fill="#55636b">';
 for(let v=0;v<=y.top+1e-9;v+=y.st)s+='<line x1="'+l+'" x2="'+(W-r)+'" y1="'+sy(v)+'" y2="'+sy(v)+'" stroke="#dde3e6"/><text x="'+(l-6)+'" y="'+(sy(v)+4)+'" text-anchor="end">'+nf(v)+'</text>';
-gs.forEach((g,i)=>{const x0=l+gw*i+gw/2-S.length*bw/2,w=g.split(' ');S.forEach((p,k)=>{const v=val(p,g),x=x0+k*bw,h=ph*v/y.top;s+='<rect x="'+x+'" y="'+(t+ph-h)+'" width="'+(bw-2)+'" height="'+h+'" fill="'+p.col+'" rx="2"><title>'+p.rot+' · '+g+': '+nf(v)+' matrículas</title></rect>'+(v?'<text x="'+(x+(bw-2)/2)+'" y="'+(t+ph-h-4)+'" text-anchor="middle" font-size="9" fill="#101828" font-weight="600">'+nf(v)+'</text>':'')});
-s+='<text x="'+(l+gw*i+gw/2)+'" y="'+(Ht-24)+'" text-anchor="middle" font-weight="600" fill="#101828">'+w[0]+'</text><text x="'+(l+gw*i+gw/2)+'" y="'+(Ht-10)+'" text-anchor="middle">'+(w.length>1?w[w.length-1]:'')+'</text>'});
+gs.forEach((g,i)=>{const x0=l+gw*i+gw/2-S.length*bw/2,w=g.split(' ');S.forEach((p,k)=>{const v=val(p,g),x=x0+k*bw,h=ph*v/y.top;s+='<rect x="'+x+'" y="'+(t+ph-h)+'" width="'+(bw-2)+'" height="'+h+'" fill="'+p.col+'" rx="2"><title>'+p.rot+' · '+g+': '+nf(v)+' matrículas</title></rect>'+'<text x="'+(x+(bw-2)/2)+'" y="'+(t+ph+13)+'" text-anchor="middle" font-size="10" font-weight="700" fill="'+p.col+'">'+p.n+'</text>'+(v?'<text x="'+(x+(bw-2)/2)+'" y="'+(t+ph-h-4)+'" text-anchor="middle" font-size="9" fill="#101828" font-weight="600">'+nf(v)+'</text>':'')});
+s+='<text x="'+(l+gw*i+gw/2)+'" y="'+(Ht-22)+'" text-anchor="middle" font-weight="600" fill="#101828">'+w[0]+'</text><text x="'+(l+gw*i+gw/2)+'" y="'+(Ht-8)+'" text-anchor="middle">'+(w.length>1?w[w.length-1]:'')+'</text>'});
 el.innerHTML=s+'</svg>'}
 const tudo=()=>{porProcesso();porGestor()};
 $('cmp').addEventListener('change',e=>{if(e.target.dataset&&e.target.dataset.n){e.target.checked?sel.add(e.target.dataset.n):sel.delete(e.target.dataset.n)}tudo()});
 tudo();$('cmp').hidden=false}catch(e){}});
 </script></body></html>
+ 
  
  
  
