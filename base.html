@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'unsafe-inline'; img-src data:; connect-src https://wfequjtoutpqvfyjdrvo.supabase.co">
+<title>Base de dados – Portal Aceleradores</title>
+<style>
+:root{--bg:#f4f6fa;--card:#fff;--ink:#1c2433;--mut:#5d6779;--line:#dde3ee;--pri:#1f3864;--pri2:#2f5597;--ok:#1b7f3b;--okb:#dff3e4;--bad:#b3261e;--badb:#fde4e1;--mid:#8a6100;--midb:#fff3d6;--r:10px}
+*{box-sizing:border-box}[hidden]{display:none!important}
+body{margin:0;font:14px/1.5 Arial,Helvetica,sans-serif;background:var(--bg);color:var(--ink)}
+.vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.skip{position:absolute;left:-999px;top:8px;background:#fff;padding:8px 12px;border-radius:6px;z-index:10}.skip:focus{left:8px}
+:focus-visible{outline:3px solid #f2a900;outline-offset:2px}
+.topo{background:var(--pri);color:#fff;padding:12px 12px}.topo h1{margin:0;font-size:19px}.topo p{margin:2px 0 0;font-size:12px;opacity:.85}
+main{max-width:none;margin:0;padding:12px 10px 40px;display:grid;gap:16px}main>*{min-width:0}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px}
+h2{margin:0 0 12px;font-size:16px;color:var(--pri)}h3{margin:0 0 4px;font-size:14px}
+.hint{color:var(--mut);font-size:12px;margin:4px 0}
+/* arquivos */
+.files{display:grid;grid-template-columns:1fr 1fr;gap:14px}@media(max-width:800px){.files{grid-template-columns:1fr}}
+.drop{border:2px dashed #b9c3d6;border-radius:var(--r);padding:16px;text-align:center;transition:.15s}.drop.drag{background:#eaf0fb;border-color:var(--pri)}
+.drop p{margin:2px 0 12px;color:var(--mut);font-size:12px}
+.btn{display:inline-block;background:var(--pri);color:#fff;border:1px solid var(--pri);border-radius:8px;padding:8px 16px;font:inherit;cursor:pointer}.btn:hover{background:var(--pri2)}
+.btn.sec{background:#fff;color:var(--pri)}.btn.sec:hover{background:#eef2f9}
+input.vh:focus-visible+label.btn{outline:3px solid #f2a900;outline-offset:2px}
+.slot{border:1px solid var(--line);border-radius:var(--r);padding:12px}.files{margin-top:12px}.st{margin:6px 0 0;font-size:12px;min-height:16px}.okst{color:var(--ok)}.errst{color:var(--bad)}
+/* parâmetros */
+details>summary{cursor:pointer;font-weight:700;font-size:16px;color:var(--pri);list-style-position:inside}
+fieldset{border:1px solid var(--line);border-radius:8px;margin:12px 0 0;padding:10px 12px 12px}legend{padding:0 6px;font-weight:700;color:var(--pri);font-size:13px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+label{display:block;font-size:12px;color:var(--mut);margin-bottom:3px}
+input[type=date],input[type=number],input[type=text],select,textarea{width:100%;padding:7px 8px;border:1px solid #c0c9d9;border-radius:6px;font:inherit;color:var(--ink);background:#fff}
+textarea{min-height:70px;resize:vertical}
+/* resultados */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin:0 0 12px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px}.kpi dt{font-size:12px;color:var(--mut)}.kpi dd{margin:0}.kv{font-size:26px;font-weight:700;color:var(--pri)}.ks{font-size:12px;color:var(--mut)}
+#info{color:var(--mut);font-size:12px;margin:0 0 10px}#err{color:var(--bad);font-weight:700}
+.filtros{display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap;margin:0 0 12px;border:0;padding:0}.filtros label{margin:0}.filtros select{min-width:230px}.filtros .chk{display:flex;gap:6px;align-items:center;color:var(--ink);font-size:13px;padding-bottom:8px}.chk input{width:auto}
+.bar{display:flex;gap:4px;flex-wrap:wrap;align-items:flex-end;border-bottom:2px solid var(--pri)}
+.tab{background:#e9edf5;border:0;border-radius:8px 8px 0 0;padding:9px 16px;cursor:pointer;font:inherit;color:var(--ink)}.tab[aria-selected=true]{background:var(--pri);color:#fff;font-weight:700}
+.grow{flex:1}.bar .btn{margin-bottom:4px}
+.tools{display:flex;gap:10px;align-items:center;margin:10px 0 8px}.tools input{max-width:280px}
+.wrap{overflow:auto;max-height:68vh;border:1px solid var(--line);border-radius:8px;background:#fff}
+table{border-collapse:separate;border-spacing:0;width:100%;font-size:13px}
+caption{text-align:left;padding:8px 10px;font-weight:700;color:var(--pri)}
+th,td{padding:6px 9px;border-bottom:1px solid var(--line);white-space:nowrap;text-align:right}
+thead th{background:#eef2f9;position:sticky;top:0;z-index:2}thead th.grp{text-align:center;background:#dbe4f4;color:var(--pri)}
+table.two thead tr:nth-child(2) th{top:32px}
+th.sortable{padding:0}th.sortable button{all:unset;display:block;cursor:pointer;padding:6px 9px;width:100%;box-sizing:border-box;font-weight:700;text-align:right}th.sortable button:focus-visible{outline:3px solid #f2a900;outline-offset:-3px}
+tbody th{font-weight:400;text-align:left}td.txt,th.txt{text-align:left}thead th:first-child button{text-align:left}.chk label{display:inline!important;margin:0}td.ctr{text-align:center}th.sortable.txt button{text-align:left}
+tbody th,thead th:first-child,tfoot th{position:sticky;left:0;background:#fff;z-index:1;min-width:230px;text-align:left}thead th:first-child{background:#eef2f9;z-index:3}
+tbody tr:hover>*{background:#f7f9fd}tfoot th,tfoot td{font-weight:700;background:#eef2f9;position:sticky;bottom:0;z-index:2}
+td.ok{background:var(--okb);color:var(--ok)}td.bad{background:var(--badb);color:var(--bad)}td.mid{background:var(--midb);color:var(--mid)}td.dim{color:var(--mut)}td.b{font-weight:700}
+h3{margin:14px 0 6px;color:var(--pri)}.wrap.sm{max-height:none}.chart{background:#fff;border:1px solid var(--line);border-radius:8px;padding:10px;overflow:auto}.chart svg{display:block;max-width:100%;height:auto}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--mut);margin:0 0 6px}.legend i{display:inline-block;width:12px;height:12px;border-radius:2px;margin-right:5px;vertical-align:-2px}
+svg text{font-family:Arial,Helvetica,sans-serif}.b-ok{fill:#2e9d4f}.b-go{fill:#2f5597}.b-falta{fill:#f8c9c4;stroke:#b3261e;stroke-dasharray:3 2}
+#note,#count{color:var(--mut);font-size:12px;margin:6px 0 0}
+#conf h3{margin:14px 0 4px;color:var(--pri)}#conf ul{margin:6px 0 12px 18px;padding:0}
+#empty{text-align:center;color:var(--mut);padding:30px}
+footer{text-align:center;color:var(--mut);font-size:12px;padding:0 0 24px}
+
+.arq{display:flex;gap:8px 16px;align-items:center;flex-wrap:wrap}.arq h2{margin:0}.arq .st{margin:0;padding:3px 10px;border:1px solid var(--line);border-radius:999px;background:#f7f9fd}.arq .hint{margin:0;flex:1 1 260px}
+#sec-arq{padding:10px 16px}#sec-arq .drop{display:none}#sec-arq #stGeral{margin:4px 0 0}
+#zDrop.drag{background:#eaf0fb;outline:2px dashed var(--pri);outline-offset:4px;border-radius:8px}
+.pgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:0 14px}.pgrid fieldset{margin:10px 0 0}.pgrid fieldset:has(#cicInputs){grid-column:1/-1}#cicInputs{grid-template-columns:repeat(4,minmax(0,1fr))}@media(max-width:800px){#cicInputs{grid-template-columns:repeat(2,minmax(0,1fr))}}
+details>summary{font-size:15px}details>summary .hint{font-weight:400}
+.filtros{padding:8px 12px!important;gap:8px 12px!important;margin:0 0 8px!important}.filtros select{min-width:0!important;width:170px;padding:4px 6px;font-size:13px}.filtros label{font-size:11px}.filtros .btn{padding:4px 12px;font-size:13px}.filtros .chk{padding-bottom:4px!important}
+.kpis{gap:8px!important;margin:0 0 8px!important;grid-template-columns:repeat(auto-fit,minmax(170px,1fr))!important}.kpi{padding:8px 12px!important}.kv{font-size:21px!important}
+.tools{margin:6px 0!important}main{gap:10px!important;padding-top:12px!important}
+.act{display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-start}.act .btn{padding:2px 8px;font-size:12px;text-decoration:none;white-space:nowrap}a.btn.sec{color:var(--pri)}a.lnk{color:var(--pri2);text-decoration:underline}.msgbox{margin:8px 0}.msgbox summary{font-size:13px}.msgbox textarea{min-height:150px}.msgpre{white-space:pre-wrap;background:#f7f9fd;border:1px solid var(--line);border-radius:8px;padding:10px;font:13px/1.5 Arial,sans-serif;margin:6px 0;max-width:720px}#disPrev{margin-top:10px}#disCons td.txt{white-space:normal}
+.selgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:8px}fieldset.gsel{margin:0;padding:6px 10px 8px}fieldset.gsel legend{font-size:13px;white-space:normal}.gcnt{white-space:nowrap;font-weight:400;color:var(--mut);font-size:12px}.gcons{display:grid;gap:1px}.chkl{display:flex!important;gap:6px;align-items:center;margin:0!important;font-size:13px!important;color:var(--ink)!important}.chkl input{width:auto;margin:0}legend .chkl{display:inline-flex!important;font-weight:700;color:var(--pri)!important}
+details.mais{position:relative;display:inline-block}details.mais>summary{font-size:12px;font-weight:400;border:1px solid var(--line);border-radius:6px;padding:2px 8px;cursor:pointer;list-style:none}.maisbox{position:absolute;right:0;z-index:5;background:#fff;border:1px solid var(--line);border-radius:8px;padding:6px;display:flex;flex-direction:column;gap:4px;min-width:150px;box-shadow:0 4px 12px rgba(0,0,0,.15)}.maisbox .btn{text-align:left}
+.conn{font-weight:700;margin:8px 0}.conn.on{color:#1a7f37}.conn.off{color:#b54708}.act.big .btn{font-size:15px;padding:8px 18px}ol.passos{padding-left:20px;line-height:2.1}
+dialog#mass{border:1px solid var(--line);border-radius:12px;max-width:760px;width:92vw;padding:18px 20px}dialog#mass::backdrop{background:rgba(20,30,50,.45)}.masslist{max-height:240px;overflow:auto;margin:6px 0;padding:6px 10px 6px 22px;border:1px solid var(--line);border-radius:8px;font-size:13px;list-style:none}.masslist li.miss{color:var(--bad)}.btn.pri{background:var(--pri2);color:#fff}
+.dest{display:flex;gap:4px;flex-wrap:wrap}.dest input{width:220px;padding:3px 6px;font-size:12px}.dest input[type=tel]{width:130px}.dest input[aria-invalid=true]{border-color:var(--bad);background:var(--badb)}
+@media print{.topo,#sec-arq,#sec-par,.filtros,.bar,.tools,.skip,footer{display:none!important}.wrap{max-height:none;overflow:visible}body{background:#fff}}
+</style>
+<style>.proto{background:#fff8e6;color:#7a4b00;text-align:center;font:12px system-ui,sans-serif;padding:5px 12px;border-bottom:1px solid #f1dfb0}
+header.menu{display:flex;gap:4px;align-items:center;padding:0 12px;min-height:56px;background:#0f2557;color:#fff;flex-wrap:wrap;font-family:system-ui,sans-serif}
+header.menu b{margin-right:18px}header.menu .sp{flex:1}header.menu .mut{color:#b9c3e0;font-size:.85rem;margin-right:6px}
+header.menu a{color:#c9d2ec;text-decoration:none;padding:17px 12px;font-size:.9rem;border-bottom:2px solid transparent}header.menu a:hover{color:#fff}header.menu a.on{color:#fff;border-bottom-color:#f2b84b}
+header.menu .tag{font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;padding:3px 8px;border-radius:3px;background:rgba(255,255,255,.12);color:#f2d28a}</style></head>
+</head>
+<body><script src="auth.js"></script><script src="common.js"></script><script>(function(){var u=Auth.current();if(!u||(u.perfil!=="gestor"&&u.perfil!=="admin")){location.replace(u?"index.html":"login.html");return}topo(u,"base.html");try{sessionStorage.setItem("dash_auth","1");sessionStorage.setItem("painel_nome",u.nome)}catch(e){}})()</script>
+<header class="topo"><h1>Base de dados — arquivos e parâmetros</h1><p>Esta página alimenta o Painel de Vendas, o Dashboard, Aprovações e a conferência com o Omnichat. O que for publicado aqui vale para todos os gestores.</p></header>
+<main>
+  <section class="card" id="sec-arq" aria-labelledby="h-arq">
+    <div class="arq" id="zDrop">
+      <h2 id="h-arq">1. Arquivos base</h2>
+      <input class="vh" type="file" id="fArq" multiple><label class="btn" for="fArq">Escolher arquivos…</label> <button class="btn sec" type="button" id="btnSb">↻ Atualizar do banco</button> <button class="btn sec" type="button" id="btnPubTopo">⬆ Publicar Topo e Inscritos para todos</button> <button class="btn sec" type="button" id="btnPubCfg">💾 Salvar parâmetros para todos</button>
+      <p class="hint" id="shInfo" role="status"></p>
+      <p class="st" id="stAcel" role="status" aria-live="polite"><b>Acelerador:</b> aguardando…</p>
+      <p class="st" id="stTopo" role="status" aria-live="polite"><b>Topo:</b> aguardando…</p>
+      <p class="st" id="stInsc" role="status" aria-live="polite"><b>Inscritos:</b> opcional</p>
+      <p class="st" id="stAtend" role="status" aria-live="polite"><b>Atendimentos:</b> opcional (fica só neste computador: tem telefone e CPF)</p>
+      <p class="hint grow" id="hArq">Escolha os dois de uma vez ou arraste para cá; o tipo é identificado pelo conteúdo (colunas), não pelo nome.</p>
+    </div>
+    <p class="st" id="stGeral" role="alert"></p>
+  </section>
+
+  <details class="card" id="sec-par" open>
+    <summary>2. Parâmetros <span class="hint">(período, metas, semana, feriados, processos, nomes)</span></summary>
+    <div class="pgrid">
+    <fieldset><legend>Metas</legend>
+      <div class="grid">
+        <div><label for="metaDia">Meta por consultor por dia</label><input type="number" id="metaDia" value="3" min="0" step="1"></div>
+        <div><label for="ho">Home Office a partir de (vendas na semana)</label><input type="number" id="ho" value="21" min="0"></div>
+        <div><label for="folga">Folga a partir de (vendas na semana)</label><input type="number" id="folga" value="24" min="0"></div>
+      </div>
+    </fieldset>
+    <fieldset><legend>Semana e feriados</legend>
+      <div class="grid">
+        <div><label for="semIni">Semana começa em</label><select id="semIni"><option value="1">Segunda</option><option value="2" selected>Terça</option><option value="3">Quarta</option><option value="4">Quinta</option><option value="5">Sexta</option><option value="6">Sábado</option></select></div>
+        <div><label for="fer">Feriados (dd/mm/aaaa, um por linha)</label><textarea id="fer"></textarea></div>
+      </div>
+      <p class="hint">Domingo nunca conta como dia útil. Consultor ativo = teve ao menos 1 venda no período.</p>
+    </fieldset>
+    <fieldset><legend>Processos de vendas</legend>
+      <div class="grid" id="cicInputs"></div>
+      <p class="hint">Informe a data de início e de fim de cada processo (51 a 54). Preencha só os processos que você já conhece: processo sem datas fica em branco e não é analisado (nem aparece no filtro). A meta de um processo é calculada para o processo inteiro (dias úteis seg-sáb × meta por dia).</p>
+    </fieldset>
+    <fieldset><legend>Unificação de nomes</legend>
+      <label for="alias">NOME NO TOPO = CHAVE DO ACELERADOR (um por linha)</label><textarea id="alias"></textarea>
+    </fieldset>
+    <fieldset><legend>Jornada de trabalho</legend>
+      <label for="jornada">NOME ; ENTRADA ; SAÍDA (um por linha; pode colar do Excel)</label><textarea id="jornada" rows="8"></textarea>
+      <p class="hint">Padrão do projeto: quem está nesta lista aparece em todas as abas por consultor, mesmo sem nenhum dado no período (com zeros, mesmo sem gestor), e a coluna Equipe (Manhã = entra antes das 12h; Tarde = 12h–17:59; Noite = a partir das 18h) aparece nas tabelas, com filtro.</p>
+    </fieldset>
+    </div>
+  </details>
+<p class="hint" style="margin:14px 4px">Depois de importar e publicar, abra o <a href="painel.html">Painel de Vendas</a>.</p>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="core.js"></script>
+<script src="idb.js"></script>
+<script>(() => {
+  const $ = id => document.getElementById(id);
+  const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+  const S = { acel: null, topo: null, insc: null, atend: null, temDq: false };
+  const NOMES = { stAcel: 'Acelerador: ', stTopo: 'Topo: ', stAtend: 'Atendimentos: ', stInsc: 'Inscritos: ' };
+  function status(id, t, ok) { const e = $(id); e.textContent = (NOMES[id] || '') + t; e.className = 'st ' + (ok ? 'okst' : 'errst'); }
+  const quando = iso => new Date(iso).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+  const meuNome = () => { try { return sessionStorage.getItem('painel_nome') || ''; } catch (e) { return ''; } };
+  async function classify(f) {
+    const u8 = new Uint8Array(await f.arrayBuffer());
+    const binary = (u8[0] === 0x50 && u8[1] === 0x4B) || (u8[0] === 0xD0 && u8[1] === 0xCF); // xlsx (zip) ou xls (OLE)
+    let mx = null, det = null;
+    if (binary) {
+      const wb = XLSX.read(u8, { type: 'array' });
+      for (const n of wb.SheetNames) { mx = XLSX.utils.sheet_to_json(wb.Sheets[n], { header: 1, raw: true, defval: null }); det = Core.detectMatrix(mx); if (det) break; }
+    } else {
+      const text = new TextDecoder('utf-8').decode(u8).replace(/^\uFEFF/, '');
+      if (Core.isAceleradorTxt(text)) { const r = Core.parseAceleradorTxt(text); return { tipo: 'acel', rows: r.rows, bad: r.bad }; }
+      if (/^\s*<(html|table)/i.test(text)) { // .xls exportado pelo sistema = tabela HTML (o leitor de Excel não lê)
+        const doc = new DOMParser().parseFromString(text, 'text/html'); mx = [...doc.querySelectorAll('tr')].map(tr => [...tr.cells].map(c => { const v = c.textContent.trim(); return v === '' ? null : v; }));
+      } else { const wb = XLSX.read(text, { type: 'string', raw: true }); mx = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1, raw: true, defval: null }); }
+      det = Core.detectMatrix(mx);
+    }
+    if (!det) throw new Error('conteúdo não reconhecido. Esperado: Acelerador (Consultor(a), Registrado Em, Gestor), Topo (Candidato, Qualificado, Matrícula, Data Pago RA) ou Inscritos (Candidato, Data Inscrição, Inscrito Por) ou Atendimentos (Prioridade, Identificador, Nome completo, Telefone).');
+    if (det.tipo === 'insc') return { tipo: 'insc', rows: Core.parseInsc(mx, det.h), bad: 0 };
+    if (det.tipo === 'atend') return { tipo: 'atend', rows: Core.parseAtend(mx, det.h), bad: 0 };
+    if (det.tipo === 'topo') { const pt = Core.parseTopoMatrix(mx); return { tipo: 'topo', rows: pt.rows, bad: 0, temDq: pt.temDq }; }
+    const r = Core.parseAceleradorObjs(Core.matrixToObjs(mx, det.h));
+    return { tipo: 'acel', rows: r.rows, bad: r.bad };
+  }
+  async function handleFiles(files) {
+    $('stGeral').textContent = ''; const erros = [];
+    for (const f of files) {
+      try {
+        const r = await classify(f);
+        if (!r.rows.length) throw new Error('tipo reconhecido, mas sem linhas válidas.');
+        const txt = `✓ ${r.rows.length.toLocaleString('pt-BR')} ${r.tipo === 'acel' ? 'registros' : r.tipo === 'atend' ? 'atendimentos' : r.tipo === 'insc' ? 'inscritos' : 'candidatos'}` + (r.bad ? ` (${r.bad} ignorados)` : '') + ` · ${f.name.length > 24 ? f.name.slice(0, 22) + '…' : f.name} · ainda não publicado`;
+        const em = new Date().toISOString();
+        if (r.tipo === 'acel') { status('stAcel', 'este arquivo é lido do banco; o Acelerador não precisa ser importado.', false); }
+        else if (r.tipo === 'insc') { S.insc = r.rows; status('stInsc', txt, true); await IDB.set('insc', { rows: r.rows, em }); }
+        else if (r.tipo === 'atend') { S.atend = r.rows; status('stAtend', txt.replace(' · ainda não publicado', ' · só neste computador'), true); await IDB.set('atend', { rows: r.rows, em }); }
+        else { S.topo = r.rows; S.temDq = !!r.temDq; status('stTopo', txt + (r.temDq ? ' · com Data Qualificado' : ' · sem Data Qualificado'), true); await IDB.set('topo', { rows: r.rows, temDq: !!r.temDq, em }); }
+      } catch (e) { erros.push(`${f.name}: ${e.message}`); }
+    }
+    $('stGeral').textContent = erros.join(' | ');
+  }
+  function bindDrop(zone, input) {
+    input.addEventListener('change', () => { if (input.files.length) handleFiles([...input.files]); input.value = ''; });
+    zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag'); });
+    zone.addEventListener('dragleave', () => zone.classList.remove('drag'));
+    zone.addEventListener('drop', e => { e.preventDefault(); zone.classList.remove('drag'); if (e.dataTransfer.files.length) handleFiles([...e.dataTransfer.files]); });
+  }
+
+  /* ---------- processos de vendas ---------- */
+  const CICLOS = [51, 52, 53, 54];
+  const CIC_DEF = { 51: ['2026-10-27', '2027-03-22'], 52: ['', ''], 53: ['', ''], 54: ['', ''] }; // em branco: processo sem datas não é analisado
+  const ciclos = () => CICLOS.map(n => ({ n, ini: $('c' + n + 'i').value, fim: $('c' + n + 'f').value }));
+  const cicOk = c => Core.isKey(c.ini) && Core.isKey(c.fim) && c.ini <= c.fim;
+  function buildCicInputs() {
+    let saved = {}; try { saved = JSON.parse(localStorage.getItem('vendas_ciclos_v2') || '{}'); } catch (e) {}
+    const box = $('cicInputs');
+    CICLOS.forEach(n => {
+      const [i0, f0] = saved[n] || CIC_DEF[n];
+      [['i', 'início', i0], ['f', 'fim', f0]].forEach(([k, lb, v]) => {
+        const d = el('div'), l = el('label', '', `Processo ${n}: ${lb}`), inp = el('input'); l.htmlFor = inp.id = 'c' + n + k; inp.type = 'date'; inp.value = v; d.append(l, inp); box.append(d);
+        inp.addEventListener('change', () => guardarLocal());
+      });
+    });
+  }
+  const CFG_IDS = ['metaDia', 'ho', 'folga', 'semIni', 'fer', 'alias', 'jornada'];
+  const lerCfg = () => ({ ...Object.fromEntries(CFG_IDS.map(i => [i, $(i).value])), ciclos: Object.fromEntries(CICLOS.map(n => [n, [$('c' + n + 'i').value, $('c' + n + 'f').value]])) });
+  function aplicarCfg(c) {
+    CFG_IDS.forEach(i => { if (c[i] != null) $(i).value = c[i]; });
+    CICLOS.forEach(n => { const v = c.ciclos && c.ciclos[n]; if (v) { $('c' + n + 'i').value = v[0]; $('c' + n + 'f').value = v[1]; } });
+  }
+  const guardarLocal = () => { try { const c = lerCfg(); localStorage.setItem('vendas_cfg', JSON.stringify(c)); localStorage.setItem('vendas_alias', c.alias); localStorage.setItem('vendas_fer', c.fer); localStorage.setItem('vendas_jornada', c.jornada); localStorage.setItem('vendas_ciclos_v2', JSON.stringify(c.ciclos)); } catch (e) {} };
+  const JORNADA_DEF = "Celia de Souza Lima ; 08:00:00 ; 14:00:00\nNeide Dagues Costa ; 08:00:00 ; 14:00:00\nVanusa Silvino ; 18:00:00 ; 23:59:59\nTalita Araujo Dos Santos ; 08:00:00 ; 14:00:00\nBeatriz de Oliveira Xavier ; 08:00:00 ; 14:00:00\nAndreia Ferreira de Oliveira ; 18:00:00 ; 23:59:59\nWillyan Gabriel Lopes Moreira De Almeida ; 08:00:00 ; 14:00:00\nMarcos Vinícius Ferreira Fontes ; 15:00:00 ; 21:00:00\nJULIA CAROLINE DA SILVA PESSOA ; 14:00:00 ; 20:00:00\nJOYCE ANDRESSA DA SILVA VALENTINO ; 15:00:00 ; 21:00:00\nSTHEFANNY DAYANNE DA SILVA ROBERTO ; 14:00:00 ; 20:00:00\nLEANDRA SANTOS LORENZETTI ; 08:00:00 ; 14:00:00\nGustavo Qualho Cazoni ; 08:00:00 ; 14:00:00\nVICTOR KENDY KOZINA ; 14:00:00 ; 20:00:00\nLucas Brito Medeiros Da Silva ; 15:00:00 ; 21:00:00\nEmily Emanuelly de Souza ; 15:00:00 ; 21:00:00\nAlessandra Rosa Cabral ; 15:00:00 ; 21:00:00\nMaria Victoria Marques ; 08:00:00 ; 14:00:00\nJulya Amanda Almeida Silva ; 14:00:00 ; 20:00:00\nAna Claudia Monteiro De Vasconcelos ; 08:00:00 ; 14:00:00\nERICK ALEXSANDER NASCIMENTO DOS SANTOS ; 08:00:00 ; 14:00:00\nPedro Henrique Ribeiro dos Santos ; 14:00:00 ; 20:00:00\nCAROLINE SILVA SANTOS ; 14:00:00 ; 20:00:00\nFernanda Magioto ; 08:00:00 ; 14:00:00\nIngrid Kawane Ribeiro Moreira ; 08:00:00 ; 14:00:00\nThayssa Victoria da Silva Pereira ; 14:00:00 ; 20:00:00\nGLACIANE CRISTINA DA SILVA ; 08:00:00 ; 14:00:00\nMaria Eduarda Toledo de Oliveira ; 14:00:00 ; 20:00:00\nHenrique Caua Cupertino Navarro ; 14:00:00 ; 20:00:00\nSABRINA MANOELA DOS SANTOS LIMA ; 14:00:00 ; 20:00:00\nSarah da Silva Purnucena ; 08:00:00 ; 14:00:00\nRosa Caroline Benedito ; 08:00:00 ; 14:00:00\nGiovanna Cadide Cabral ; 08:00:00 ; 14:00:00\nJulie Ndinga Zeferino da Silva ; 08:00:00 ; 14:00:00\nTHAILA LORRAINE RODRIGUES CORDEIRO ; 14:00:00 ; 20:00:00";
+
+  /* ---------- banco (Supabase): painel_dados guarda config, topo e insc ---------- */
+  const SB = window.supabase.createClient('https://wfequjtoutpqvfyjdrvo.supabase.co', 'sb_publishable_NYXnlMO9SZc4Sg3zxPCZtw_Uto0gecQ');
+  async function atualizar(aplicar) {
+    try {
+      const { count, error } = await SB.from('aceleradores_matriculas').select('id', { count: 'exact', head: true }); if (error) throw error;
+      status('stAcel', `✓ ${count.toLocaleString('pt-BR')} registros · banco (Supabase)`, true);
+    } catch (e) { status('stAcel', 'erro ao ler o banco: ' + e.message, false); }
+    const { data, error } = await SB.from('painel_dados').select('chave,valor,atualizado_por,atualizado_em');
+    if (error) { $('shInfo').textContent = 'Dados compartilhados indisponíveis: ' + error.message; return; }
+    const m = Object.fromEntries(data.map(d => [d.chave, d])), por = d => `enviado por ${d.atualizado_por || '?'} em ${quando(d.atualizado_em)}`;
+    if (m.config && aplicar) aplicarCfg(m.config.valor);
+    if (m.topo && !S.topo) status('stTopo', `✓ ${m.topo.valor.rows.length.toLocaleString('pt-BR')} linhas · publicado (${por(m.topo)})`, true);
+    if (m.insc && !S.insc) status('stInsc', `✓ ${m.insc.valor.rows.length.toLocaleString('pt-BR')} inscritos · publicado (${por(m.insc)})`, true);
+    $('shInfo').textContent = (m.config ? `Parâmetros: salvos por ${m.config.atualizado_por || '?'} em ${quando(m.config.atualizado_em)}` : 'Parâmetros: ainda não salvos para todos') + ` · banco lido às ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
+  }
+  async function publicar(itens) {
+    for (const [chave, valor] of itens) {
+      const { error } = await SB.from('painel_dados').upsert({ chave, valor, atualizado_por: meuNome() || 'gestor', atualizado_em: new Date().toISOString() });
+      if (error) { $('stGeral').textContent = `Não foi possível publicar "${chave}": ` + error.message; return false; }
+    }
+    $('stGeral').textContent = ''; await atualizar(false); return true;
+  }
+
+  document.addEventListener('DOMContentLoaded', async () => {
+    bindDrop($('zDrop'), $('fArq'));
+    let c = null; try { c = JSON.parse(localStorage.getItem('vendas_cfg') || 'null'); } catch (e) {}
+    $('alias').value = 'GUSTAVO CAZONI = GUSTAVO QUALHO CAZONI\nMARIA EDUARDA TOLEDO OLIVEIRA = MARIA EDUARDA TOLEDO DE OLIVEIRA'; $('fer').value = '02/11/2026'; $('jornada').value = JORNADA_DEF;
+    buildCicInputs(); if (c) aplicarCfg(c);
+    [...CFG_IDS, ...CICLOS.flatMap(n => ['c' + n + 'i', 'c' + n + 'f'])].forEach(id => $(id).addEventListener('input', guardarLocal));
+    $('btnSb').addEventListener('click', () => atualizar(true));
+    $('btnPubCfg').addEventListener('click', () => publicar([['config', lerCfg()]]));
+    $('btnPubTopo').addEventListener('click', () => {
+      const it = []; if (S.topo) it.push(['topo', { rows: S.topo.map(r => ({ nome: r.nome, qual: r.qual, mat: r.mat, date: r.date, dq: r.dq })), temDq: !!S.temDq }]); // só estes campos: nada de CPF
+      if (S.insc) it.push(['insc', { rows: S.insc }]);
+      if (!it.length) { $('stGeral').textContent = 'Carregue o Topo ou os Inscritos antes de publicar.'; return; }
+      publicar(it);
+    });
+    const a = await IDB.get('atend').catch(() => null); if (a) { S.atend = a.rows; status('stAtend', `✓ ${a.rows.length.toLocaleString('pt-BR')} atendimentos · só neste computador (${quando(a.em)})`, true); }
+    await atualizar(!c);
+  });
+})();
+</script>
+</body>
+</html>
