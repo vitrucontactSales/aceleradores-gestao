@@ -84,35 +84,36 @@ header.menu a{color:#c9d2ec;text-decoration:none;padding:17px 12px;font-size:.9r
 header.menu .tag{font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;padding:3px 8px;border-radius:3px;background:rgba(255,255,255,.12);color:#f2d28a}</style></head>
 <body><script src="auth.js"></script><script src="common.js"></script><script>(function(){var u=Auth.current();if(!u||(u.perfil!=="gestor"&&u.perfil!=="admin")){location.replace(u?"index.html":"login.html");return}topo(u,"painel.html");try{sessionStorage.setItem("dash_auth","1");sessionStorage.setItem("painel_nome",u.nome)}catch(e){}})()</script>
 <a class="skip" href="#resultados">Ir para os resultados</a>
-<header class="topo"><h1>Painel de Vendas — Acelerador + Topo</h1><p>Acesso restrito a gestores e administradores. O Acelerador vem do banco; Topo, Inscritos e Atendimentos são processados no seu computador (nada é enviado).</p></header>
+<header class="topo"><h1>Painel de Vendas — Acelerador + Topo</h1><p>Acesso restrito a gestores e administradores. Acelerador, Topo e Inscritos vêm do banco (publicados na Base de dados); Atendimentos ficam só no seu computador.</p></header>
 <section class="card" id="gate" style="max-width:380px;margin:60px auto"><h2>🔒 Acesso restrito a gestores</h2>
 <form id="gForm"><label for="gSenha">Senha do dashboard</label><input type="password" id="gSenha" autocomplete="current-password">
 <label for="gNome" style="margin-top:8px">Seu nome <span class="hint">(aparece em "publicado por")</span></label><input type="text" id="gNome" autocomplete="name">
 <p class="st errst" id="gErr" role="alert"></p><button class="btn" type="submit" id="gBtn">Entrar</button></form></section>
 <main hidden>
   <section class="card" id="sec-arq" aria-labelledby="h-arq">
-    <div class="arq" id="zDrop">
-      <h2 id="h-arq">1. Arquivos base</h2>
-      <input class="vh" type="file" id="fArq" multiple><label class="btn" for="fArq">Escolher arquivos…</label> <button class="btn sec" type="button" id="btnSb">↻ Atualizar do banco</button> <button class="btn sec" type="button" id="btnPubTopo">⬆ Publicar Topo para todos</button> <button class="btn sec" type="button" id="btnPubCfg">💾 Salvar parâmetros para todos</button>
+    <div class="arq">
+      <h2 id="h-arq">Base de dados</h2>
+      <a class="btn" href="base.html">Arquivos e parâmetros →</a> <button class="btn sec" type="button" id="btnSb">↻ Atualizar do banco</button>
       <p class="hint" id="shInfo" role="status"></p>
       <p class="st" id="stAcel" role="status" aria-live="polite"><b>Acelerador:</b> aguardando…</p>
       <p class="st" id="stTopo" role="status" aria-live="polite"><b>Topo:</b> aguardando…</p>
       <p class="st" id="stInsc" role="status" aria-live="polite"><b>Inscritos:</b> opcional</p>
       <p class="st" id="stAtend" role="status" aria-live="polite"><b>Atendimentos:</b> opcional</p>
-      <p class="hint grow" id="hArq">Escolha os dois de uma vez ou arraste para cá; o tipo é identificado pelo conteúdo (colunas), não pelo nome.</p>
+      <p class="hint grow">Para importar arquivos ou alterar metas, feriados, processos e nomes, use a página <a href="base.html">Base de dados</a>.</p>
     </div>
     <p class="st" id="stGeral" role="alert"></p>
   </section>
-
-  <details class="card" id="sec-par">
-    <summary>2. Parâmetros <span class="hint">(período, metas, semana, feriados, processos, nomes)</span></summary>
-    <div class="pgrid">
+  <section class="card" id="sec-per">
     <fieldset><legend>Período</legend>
       <div class="grid">
         <div><label for="ini">Data início</label><input type="date" id="ini"></div>
         <div><label for="fim">Data fim</label><input type="date" id="fim"></div>
       </div>
     </fieldset>
+  </section>
+
+  <div id="sec-par" hidden>
+    <div class="pgrid">
     <fieldset><legend>Metas</legend>
       <div class="grid">
         <div><label for="metaDia">Meta por consultor por dia</label><input type="number" id="metaDia" value="3" min="0" step="1"></div>
@@ -139,9 +140,9 @@ header.menu .tag{font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;
       <p class="hint">Padrão do projeto: quem está nesta lista aparece em todas as abas por consultor, mesmo sem nenhum dado no período (com zeros, mesmo sem gestor), e a coluna Equipe (Manhã = entra antes das 12h; Tarde = 12h–17:59; Noite = a partir das 18h) aparece nas tabelas, com filtro.</p>
     </fieldset>
     </div>
-  </details>
+  </div>
 
-  <p id="empty">Escolha os arquivos acima para ver a análise.</p>
+  <p id="empty">Sem dados ainda. Importe e publique os arquivos na página <a href="base.html">Base de dados</a>.</p>
 
   <section id="resultados" aria-labelledby="h-res" hidden>
     <h2 id="h-res" class="vh">3. Resultados</h2>
@@ -299,246 +300,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
  * @copyright Louis-Dominique Dubeau
  */function n(e){return e>=65&&e<=90||95===e||e>=97&&e<=122||e>=192&&e<=214||e>=216&&e<=246||e>=248&&e<=767||e>=880&&e<=893||e>=895&&e<=8191||e>=8204&&e<=8205||e>=8304&&e<=8591||e>=11264&&e<=12271||e>=12289&&e<=55295||e>=63744&&e<=64975||e>=65008&&e<=65533||e>=65536&&e<=983039}Object.defineProperty(r,"__esModule",{value:!0}),r.NC_NAME_START_CHAR="A-Z_a-z\xc0-\xd6\xd8-\xf6\xf8-\u02ff\u0370-\u037d\u037f-\u1fff\u200c-\u200d\u2070-\u218f\u2c00-\u2fef\u3001-\ud7ff\uf900-\ufdcf\ufdf0-\ufffd\ud800\udc00-\udb7f\udfff",r.NC_NAME_CHAR="-"+r.NC_NAME_START_CHAR+".0-9\xb7\u0300-\u036f\u203f-\u2040",r.NC_NAME_START_CHAR_RE=new RegExp("^["+r.NC_NAME_START_CHAR+"]$","u"),r.NC_NAME_CHAR_RE=new RegExp("^["+r.NC_NAME_CHAR+"]$","u"),r.NC_NAME_RE=new RegExp("^["+r.NC_NAME_START_CHAR+"]["+r.NC_NAME_CHAR+"]*$","u"),r.isNCNameStartChar=n,r.isNCNameChar=function(e){return n(e)||45===e||46===e||e>=48&&e<=57||183===e||e>=768&&e<=879||e>=8255&&e<=8256}},{}]},{},[15])(15)}));
 //# sourceMappingURL=exceljs.min.js.map</script>
-<script>/* Núcleo de cálculo (sem DOM): parse dos arquivos + consolidação. Testável em Node. */
-const Core = (() => {
-  const pad = n => String(n).padStart(2, '0');
-  const mk = (y, m, d) => `${y}-${pad(m)}-${pad(d)}`;
-  const norm = s => String(s ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase().replace(/\s+/g, ' ').trim();
-  const toT = k => { const [y, m, d] = k.split('-').map(Number); return Date.UTC(y, m - 1, d); };
-  const fromT = t => { const x = new Date(t); return mk(x.getUTCFullYear(), x.getUTCMonth() + 1, x.getUTCDate()); };
-  const addDays = (k, n) => fromT(toT(k) + n * 864e5);
-  const dow = k => new Date(toT(k)).getUTCDay(); // 0 = domingo
-  const serialToKey = n => fromT(Date.UTC(1899, 11, 30) + Math.floor(n) * 864e5);
-  const ddmm = k => k.slice(8) + '/' + k.slice(5, 7);
-  const isKey = s => /^\d{4}-\d{2}-\d{2}$/.test(s || '');
-
-  /* "Registrado Em": sufixo Z = UTC -> horário de Brasília (-3h); demais já são locais */
-  function regToKey(v) {
-    if (v == null || v === '') return null;
-    if (typeof v === 'number') return serialToKey(v);
-    if (v instanceof Date) return mk(v.getFullYear(), v.getMonth() + 1, v.getDate());
-    const s = String(v).trim();
-    let m = s.match(/^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2}):(\d{2})/);
-    if (m) {
-      if (/Z$/.test(s)) return fromT(Date.UTC(+m[1], m[2] - 1, +m[3], +m[4], +m[5], +m[6]) - 3 * 36e5);
-      return mk(m[1], m[2], m[3]);
-    }
-    m = s.match(/^(\d{4})-(\d{2})-(\d{2})/); if (m) return mk(m[1], m[2], m[3]);
-    m = s.match(/^(\d{2})\/(\d{2})\/(\d{4})/); if (m) return mk(m[3], m[2], m[1]);
-    return null;
-  }
-
-  /* Acelerador em .txt (tab). Reconstrói registros quebrados em várias linhas (Observações com \n/\t). */
-  function parseAceleradorTxt(text) {
-    const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\t/i;
-    const recs = [];
-    for (const l of text.replace(/\r/g, '').split('\n')) {
-      if (UUID.test(l)) recs.push(l);
-      else if (recs.length && l.trim()) recs[recs.length - 1] += ' ' + l;
-    }
-    const rows = []; let bad = 0;
-    for (const r of recs) {
-      const p = r.split('\t');
-      if (p.length < 10) { bad++; continue; }
-      rows.push({ consultor: p[1], reg: p[p.length - 3], gestor: (p[p.length - 1] || '').trim() });
-    }
-    return finishAcel(rows, bad);
-  }
-  /* Acelerador em .xlsx/.csv (linhas já como objetos por cabeçalho) */
-  function parseAceleradorObjs(objs) {
-    const rows = []; let bad = 0;
-    for (const o of objs) {
-      const c = o['CONSULTOR(A)'] ?? o['CONSULTOR'] ?? o['CONSULTOR (A)'];
-      if (!c) { bad++; continue; }
-      rows.push({ consultor: c, reg: o['REGISTRADO EM'], gestor: String(o['GESTOR'] ?? '').trim() });
-    }
-    return finishAcel(rows, bad);
-  }
-  function finishAcel(rows, bad) {
-    const out = [];
-    for (const r of rows) {
-      const date = regToKey(r.reg);
-      if (!date) { bad++; continue; }
-      out.push({ chave: norm(r.consultor), date, gestor: r.gestor });
-    }
-    return { rows: out, bad };
-  }
-
-  /* Identificação pelo CONTEÚDO (colunas), nunca pelo nome do arquivo */
-  const UUIDROW = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\t/i;
-  const isAceleradorTxt = text => text.split('\n', 80).some(l => UUIDROW.test(l.replace(/^\uFEFF/, '')));
-  function detectMatrix(mx) {
-    for (let i = 0; i < Math.min(mx.length, 15); i++) {
-      const H = (mx[i] || []).map(norm), has = s => H.some(x => x.startsWith(s));
-      if (H.includes('PRIORIDADE') && has('IDENTIFICADOR') && has('TELEFONE') && has('NOME COMPLETO')) return { tipo: 'atend', h: i };
-      if (H.includes('CANDIDATO') && H.includes('DATA INSCRICAO') && has('INSCRITO POR')) return { tipo: 'insc', h: i };
-      if (H.includes('CANDIDATO') && has('QUALIFICADO') && has('MATRICULA')) return { tipo: 'topo', h: i };
-      if (has('CONSULTOR') && has('REGISTRADO EM')) return { tipo: 'acel', h: i };
-    }
-    return null;
-  }
-  function matrixToObjs(mx, h) {
-    const H = mx[h].map(norm);
-    return mx.slice(h + 1).filter(r => r && r.some(v => v != null && v !== '')).map(r => { const o = {}; H.forEach((k, i) => { o[k] = r[i]; }); return o; });
-  }
-
-  const dateKey = d => { let k = null; if (typeof d === 'number') k = serialToKey(d); else if (typeof d === 'string') { const m = d.match(/^(\d{2})\/(\d{2})\/(\d{4})/); if (m) k = mk(m[3], m[2], m[1]); else k = regToKey(d); } else if (d instanceof Date) k = mk(d.getFullYear(), d.getMonth() + 1, d.getDate()); return k; };
-  /* Inscritos (relatório de inscrições): uma linha por candidato; "Inscrito Por" = "<código> NOME", DIGITAL ou Não Registrado. CPF é descartado. */
-  function parseInsc(mx, h) {
-    const H = mx[h].map(norm), ic = H.indexOf('CANDIDATO'), id = H.indexOf('DATA INSCRICAO'), ip = H.findIndex(x => x.startsWith('INSCRITO POR')), seen = new Set(), rows = [];
-    for (const r of mx.slice(h + 1)) {
-      if (!r || r[ic] == null || r[ic] === '' || seen.has(String(r[ic]))) continue; seen.add(String(r[ic]));
-      const d = dateKey(r[id]); if (!d) continue;
-      const por = norm(String(r[ip] ?? '').replace(/^\s*\d+\s+/, '')); rows.push({ date: d, nome: por === 'NAO REGISTRADO' || por === '' ? 'NAO REGISTRADO' : por });
-    }
-    return rows;
-  }
-  /* Topo: matriz (array de arrays) lida do Excel com raw:true. CPF é descartado. */
-  function parseTopoMatrix(mx) {
-    let h = mx.findIndex(r => r && r.some(c => norm(c) === 'CANDIDATO'));
-    if (h < 0) throw new Error('Cabeçalho do Topo não encontrado (coluna "Candidato").');
-    const H = mx[h].map(norm);
-    const col = f => H.findIndex(f);
-    const ic = col(x => x === 'CANDIDATO'), inm = col(x => x.startsWith('NOME')), iq = col(x => x === 'QUALIFICADO'),
-          im = col(x => x.startsWith('MATRICULA')), id = col(x => x.startsWith('DATA PAGO')), idq = col(x => x === 'DATA QUALIFICADO');
-    if ([inm, iq, im, id].some(i => i < 0)) throw new Error('Colunas esperadas no Topo: Nome Usuário, Qualificado, Matrícula, Data Pago RA.');
-    const rows = [];
-    for (const r of mx.slice(h + 1)) {
-      if (!r || r[ic] == null || r[ic] === '') continue; // pula linha de totais/vazias
-      rows.push({ nome: norm(r[inm]), qual: Number(r[iq]) === 1, mat: Number(r[im]) === 1, date: dateKey(r[id]), dq: idq >= 0 ? dateKey(r[idq]) : null });
-    }
-    return { rows, temDq: idq >= 0 };
-  }
-
-  function summarize(rows, semCons) {
-    const totals = { ac: 0, tp: 0, tot: 0, qual: 0, qp: 0, pot: 0, ativo: 0, meta: 0 };
-    for (const r of rows) for (const k in totals) totals[k] += r[k];
-    totals.falta = rows.reduce((a, r) => a + r.falta, 0); totals.pct = totals.meta ? totals.tot / totals.meta : null;
-    totals.pctPot = totals.meta ? totals.pot / totals.meta : null; totals.faltaPot = rows.reduce((a, r) => a + r.faltaPot, 0);
-    totals.foraDiasUteis = totals.tot - rows.reduce((a, r) => a + r.day.reduce((p, q) => p + q, 0), 0);
-    totals.semCons = semCons;
-
-    const G = new Map();
-    for (const r of rows) {
-      const g = r.gestor || '(Sem gestor)'; if (!G.has(g)) G.set(g, { gestor: g, tot: 0, ac: 0, tp: 0, qual: 0, qp: 0, ativos: 0, meta: 0 });
-      const x = G.get(g); x.tot += r.tot; x.ac += r.ac; x.tp += r.tp; x.qual += r.qual; x.qp += r.qp; x.ativos += r.ativo; x.meta += r.meta;
-    }
-    const gestores = [...G.values()].map(g => ({ ...g, pct: g.meta ? g.tot / g.meta : null, falta: Math.max(0, g.meta - g.tot) })).sort((a, b) => b.tot - a.tot);
-    return { totals, gestores };
-  }
-  /* Consolidação. P: {acel, topo, ini, fim, metaDia, feriados:[keys], ho, folga, semanaInicio(0-6), alias:{NOME:CHAVE}} */
-  /* Listagem de atendimentos (leads a distribuir). CPF só serve para agrupar o mesmo aluno; nunca é copiado para a saída. */
-  const dOnly = v => { if (v == null || v === '') return ''; const m = String(v).match(/^(\d{4})-(\d{2})-(\d{2})/); return m ? m[3] + '/' + m[2] + '/' + m[1] : ''; };
-  const digits = v => v == null ? '' : String(v).replace(/\.0+$/, '').replace(/\D/g, '');
-  function parseAtend(mx, h) {
-    const rows = [];
-    for (const o of matrixToObjs(mx, h)) {
-      const id = o['IDENTIFICADOR']; if (id == null || id === '') continue;
-      const cpf = digits(o['CPF']), tel = digits(o['TELEFONE']);
-      rows.push({ id: String(id), prio: String(o['PRIORIDADE'] ?? '').trim() || '(sem prioridade)', nome: String(o['NOME COMPLETO'] ?? '').trim(), tel, email: String(o['E-MAIL'] ?? '').trim(),
-        curso: String(o['CURSO'] ?? '').trim(), polo: String(o['POLO'] ?? '').trim(), dtUlt: dOnly(o['DT. ULT. ATENDIMENTO']), dtRet: dOnly(o['DT. RETORNO']), inter: Number(o['INTERACOES']) || 0,
-        status: String(o['STATUS'] ?? '').trim(), origem: String(o['ORIGEM'] ?? '').trim(), resp: String(o['RESP. ULTIMO ATENDIMENTO'] ?? '').trim(), _g: cpf ? 'c' + cpf : tel ? 't' + tel : 'i' + id });
-    }
-    return rows;
-  }
-  /* Divide os leads por igual entre os consultores (dif. máx. = maior grupo de CPF). Cada prioridade também fica equilibrada.
-     cons = [{chave, gestor}] -> Map(chave -> leads[]). Determinístico. */
-  function distribuir(leads, cons, mesmoAluno) {
-    const out = new Map(cons.map(c => [c.chave, []])); if (!cons.length) return out;
-    const G = new Map(); leads.forEach((l, i) => { const k = mesmoAluno ? l._g : 'i' + i; (G.get(k) || G.set(k, []).get(k)).push(l); });
-    const gs = [...G.values()].sort((a, b) => a[0].prio < b[0].prio ? -1 : a[0].prio > b[0].prio ? 1 : b.length - a.length);
-    const tot = cons.map(() => 0), byP = cons.map(() => ({}));
-    for (const g of gs) {
-      const p = g[0].prio; let best = 0;
-      for (let i = 1; i < cons.length; i++) if (tot[i] < tot[best] || (tot[i] === tot[best] && (byP[i][p] || 0) < (byP[best][p] || 0))) best = i;
-      out.get(cons[best].chave).push(...g); tot[best] += g.length; byP[best][p] = (byP[best][p] || 0) + g.length;
-    }
-    return out;
-  }
-
-  /* Jornada: "NOME ; ENTRADA ; SAÍDA" (separador ; ou TAB, dá para colar do Excel). Map(NOME normalizado -> {ent, sai}) em HH:MM. */
-  const equipe = j => !j ? '' : j.ent < '12:00' ? 'Manhã' : j.ent < '18:00' ? 'Tarde' : 'Noite';
-  function parseJornada(txt) {
-    const m = new Map(), hm = s => { const x = String(s ?? '').trim().match(/^(\d{1,2}):(\d{2})/); return x ? x[1].padStart(2, '0') + ':' + x[2] : ''; };
-    for (const l of String(txt || '').split('\n')) { const p = l.split(/[;\t]/), k = norm(p[0]), ent = hm(p[1]), sai = hm(p[2]); if (k && ent && sai) m.set(k, { ent, sai }); }
-    return m;
-  }
-  function compute(P) {
-    const fer = new Set(P.feriados || []);
-    const work = k => dow(k) !== 0 && !fer.has(k);
-    const inP = k => k >= P.ini && k <= P.fim;
-    const workDays = (a, b) => { let n = 0; for (let k = a; k <= b; k = addDays(k, 1)) if (work(k)) n++; return n; };
-    const days = []; for (let k = P.ini; k <= P.fim; k = addDays(k, 1)) if (work(k)) days.push(k);
-
-    const C = new Map();
-    const get = k => { if (!C.has(k)) C.set(k, { chave: k, ac: new Map(), tp: new Map(), qual: 0, qp: new Map(), g: new Map() }); return C.get(k); };
-    const inc = (m, k) => m.set(k, (m.get(k) || 0) + 1);
-    for (const r of P.acel) { const c = get(r.chave); if (inP(r.date)) { inc(c.ac, r.date); if (r.gestor) inc(c.g, r.gestor); } if (r.gestor && (!c.last || r.date > c.last.d)) c.last = { d: r.date, g: r.gestor }; }
-    let semConsAtivas = 0, semConsPend = 0;
-    for (const r of P.topo) {
-      const k = P.alias[r.nome] || r.nome;
-      if (k === '-' || k === '') { if (r.mat && r.date && inP(r.date)) semConsAtivas++; if (r.qual && !r.mat) semConsPend++; continue; }
-      const c = get(k);
-      if (r.mat && r.date && inP(r.date)) inc(c.tp, r.date);
-      if (r.qual && !r.mat) c.qual++;
-      if (r.qual && r.dq && inP(r.dq)) inc(c.qp, r.dq); // qualificado no período (pela Data Qualificado), pago ou não
-    }
-    const J = P.jornada || new Map(); for (const k of J.keys()) get(k); // quem está na jornada existe mesmo sem nenhum dado
-    const sum = (m, a, b) => { let n = 0; for (const [d, v] of m) if (d >= a && d <= b) n += v; return n; };
-    const nDays = days.length, metaPer = nDays * P.metaDia;
-
-    const rows = [];
-    for (const c of C.values()) {
-      const ac = sum(c.ac, P.ini, P.fim), tp = sum(c.tp, P.ini, P.fim), tot = ac + tp;
-      const qp = sum(c.qp, P.ini, P.fim);
-      const fg = (P.forcar && P.forcar.has(c.chave)) || J.has(c.chave);
-      if (tot === 0 && c.qual === 0 && qp === 0 && !fg) continue;
-      const ativo = tot > 0 ? 1 : 0, meta = ativo * metaPer;
-      let gestor = ''; let best = 0; for (const [g, n] of c.g) if (n > best) { best = n; gestor = g; }
-      if (!gestor && c.last) gestor = c.last.g; // sem venda no Acelerador no período: usa o gestor do registro mais recente dele
-      rows.push({ chave: c.chave, gestor, ac, tp, tot, qual: c.qual, qp, pot: tot + c.qual, ativo, meta, j: J.get(c.chave) || null, eq: equipe(J.get(c.chave)), rost: J.has(c.chave), semDados: tot === 0 && c.qual === 0 && qp === 0,
-        pct: meta ? tot / meta : null, falta: Math.max(0, meta - tot), pctPot: meta ? (tot + c.qual) / meta : null,
-        faltaPot: Math.max(0, meta - tot - c.qual), _c: c });
-    }
-    rows.sort((a, b) => b.tot - a.tot || b.qual - a.qual || a.chave.localeCompare(b.chave));
-
-    /* semanas (início configurável; padrão terça; domingo nunca conta) */
-    let s = addDays(P.ini, -((dow(P.ini) - P.semanaInicio + 7) % 7));
-    if (workDays(s < P.ini ? P.ini : s, addDays(s, 6)) === 0) s = addDays(s, 7);
-    const weeks = [];
-    for (; s <= P.fim && weeks.length < 8; s = addDays(s, 7)) {
-      const a = s < P.ini ? P.ini : s, e = addDays(s, 6), b = e > P.fim ? P.fim : e;
-      weeks.push({ ini: a, fim: b, wd: workDays(a, b) });
-    }
-    for (const r of rows) {
-      r.weeks = weeks.map(w => {
-        const ac = sum(r._c.ac, w.ini, w.fim), tp = sum(r._c.tp, w.ini, w.fim), qp = sum(r._c.qp, w.ini, w.fim), tot = ac + tp, meta = r.ativo * w.wd * P.metaDia;
-        return { ac, tp, qp, tot, meta, pct: meta ? tot / meta : null, falta: Math.max(0, meta - tot),
-          ho: r.ativo || r.rost ? (tot >= P.ho ? 0 : P.ho - tot) : null, fo: r.ativo || r.rost ? (tot >= P.folga ? 0 : P.folga - tot) : null };
-      });
-      r.day = days.map(d => (r._c.ac.get(d) || 0) + (r._c.tp.get(d) || 0));
-    }
-    const { totals, gestores } = summarize(rows, { vendas: semConsAtivas, qual: semConsPend });
-
-    const acelNames = new Set(P.acel.map(r => r.chave));
-    const un = new Map();
-    for (const r of P.topo) { const k = P.alias[r.nome] || r.nome; if (k !== '-' && !acelNames.has(k)) un.set(k, (un.get(k) || 0) + 1); }
-    const soTopo = [...un].map(([nome, n]) => ({ nome, n })).sort((a, b) => b.n - a.n);
-
-    const vistos = new Set([...acelNames, ...P.topo.map(r => P.alias[r.nome] || r.nome)]), semArquivo = [...J.keys()].filter(k => !vistos.has(k)).sort();
-    return { rows, totals, weeks, days, nDays, metaPer, gestores, soTopo, semArquivo };
-  }
-  /* Filtro por gestor e/ou consultor: recalcula totais e resumo por gestor só com as linhas visíveis */
-  function view(res, fg, fc, hideNoG, fe) {
-    const rows = res.rows.filter(r => (!hideNoG || r.gestor || r.rost) && (!fg || (r.gestor || '(Sem gestor)') === fg) && (!fc || r.chave === fc) && (!fe || r.eq === fe));
-    const ex = hideNoG ? res.rows.filter(r => !r.gestor && !r.rost) : [];
-    return { ...res, rows, ...summarize(rows, res.totals.semCons), excl: { n: ex.length, vendas: ex.reduce((a, r) => a + r.tot, 0), qual: ex.reduce((a, r) => a + r.qual, 0) } };
-  }
-
-  return { equipe, parseJornada, parseInsc, parseAtend, distribuir, detectMatrix, matrixToObjs, isAceleradorTxt, norm, regToKey, parseAceleradorTxt, parseAceleradorObjs, parseTopoMatrix, compute, view, addDays, dow, ddmm, isKey, mk, toT };
-})();
-if (typeof module !== 'undefined') module.exports = Core;
-</script>
+<script src="core.js"></script><script src="idb.js"></script>
 <script>(() => {
   const $ = id => document.getElementById(id);
   const S = { acel: null, topo: null, res: null, sort: {}, tab: 'cons' };
@@ -552,42 +314,6 @@ if (typeof module !== 'undefined') module.exports = Core;
 
   /* ---------- leitura de arquivos (tudo local, nada é enviado) ---------- */
   /* O tipo do arquivo é descoberto pelo CONTEÚDO (colunas), não pelo nome nem pelo botão usado. */
-  async function classify(f) {
-    const u8 = new Uint8Array(await f.arrayBuffer());
-    const binary = (u8[0] === 0x50 && u8[1] === 0x4B) || (u8[0] === 0xD0 && u8[1] === 0xCF); // xlsx (zip) ou xls (OLE)
-    let mx = null, det = null;
-    if (binary) {
-      const wb = XLSX.read(u8, { type: 'array' });
-      for (const n of wb.SheetNames) { mx = XLSX.utils.sheet_to_json(wb.Sheets[n], { header: 1, raw: true, defval: null }); det = Core.detectMatrix(mx); if (det) break; }
-    } else {
-      const text = new TextDecoder('utf-8').decode(u8).replace(/^\uFEFF/, '');
-      if (Core.isAceleradorTxt(text)) { const r = Core.parseAceleradorTxt(text); return { tipo: 'acel', rows: r.rows, bad: r.bad }; }
-      if (/^\s*<(html|table)/i.test(text)) { // .xls exportado pelo sistema = tabela HTML (o leitor de Excel não lê)
-        const doc = new DOMParser().parseFromString(text, 'text/html'); mx = [...doc.querySelectorAll('tr')].map(tr => [...tr.cells].map(c => { const v = c.textContent.trim(); return v === '' ? null : v; }));
-      } else { const wb = XLSX.read(text, { type: 'string', raw: true }); mx = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1, raw: true, defval: null }); }
-      det = Core.detectMatrix(mx);
-    }
-    if (!det) throw new Error('conteúdo não reconhecido. Esperado: Acelerador (Consultor(a), Registrado Em, Gestor), Topo (Candidato, Qualificado, Matrícula, Data Pago RA) ou Inscritos (Candidato, Data Inscrição, Inscrito Por) ou Atendimentos (Prioridade, Identificador, Nome completo, Telefone).');
-    if (det.tipo === 'insc') return { tipo: 'insc', rows: Core.parseInsc(mx, det.h), bad: 0 };
-    if (det.tipo === 'atend') return { tipo: 'atend', rows: Core.parseAtend(mx, det.h), bad: 0 };
-    if (det.tipo === 'topo') { const pt = Core.parseTopoMatrix(mx); return { tipo: 'topo', rows: pt.rows, bad: 0, temDq: pt.temDq }; }
-    const r = Core.parseAceleradorObjs(Core.matrixToObjs(mx, det.h));
-    return { tipo: 'acel', rows: r.rows, bad: r.bad };
-  }
-  async function handleFiles(files) {
-    $('stGeral').textContent = ''; const erros = [];
-    for (const f of files) {
-      try {
-        const r = await classify(f);
-        if (!r.rows.length) throw new Error('tipo reconhecido, mas sem linhas válidas.');
-        const txt = `✓ ${r.rows.length.toLocaleString('pt-BR')} ${r.tipo === 'acel' ? 'registros' : r.tipo === 'atend' ? 'atendimentos' : r.tipo === 'insc' ? 'inscritos' : 'candidatos'}` + (r.bad ? ` (${r.bad} ignorados)` : '') + ` · ${f.name.length > 24 ? f.name.slice(0, 22) + '…' : f.name}`;
-        if (r.tipo === 'acel') { S.acel = r.rows; status('stAcel', txt, true); } else if (r.tipo === 'insc') { S.insc = r.rows; status('stInsc', txt, true); const ds = r.rows.map(x => x.date).sort(); $('inDia').value = ds[ds.length - 1]; } else if (r.tipo === 'atend') { S.atend = r.rows; S.atendFill = false; status('stAtend', txt, true); } else { S.topo = r.rows; S.temDq = !!r.temDq; status('stTopo', txt + (r.temDq ? ' · com Data Qualificado' : ' · sem Data Qualificado'), true); }
-        autoPeriod();
-      } catch (e) { erros.push(`${f.name}: ${e.message}`); }
-    }
-    $('stGeral').textContent = erros.join(' | ');
-    run();
-  }
   function status(id, t, ok) { const e = $(id); e.textContent = ({ stAcel: 'Acelerador: ', stTopo: 'Topo: ', stAtend: 'Atendimentos: ', stInsc: 'Inscritos: ' }[id] || '') + t; e.className = 'st ' + (ok ? 'okst' : 'errst'); }
   let periodSet = false;
   function autoPeriod() {
@@ -596,12 +322,6 @@ if (typeof module !== 'undefined') module.exports = Core;
     if (!ds.length) return;
     let mx = ds[0]; for (const d of ds) if (d > mx) mx = d;
     $('ini').value = mx.slice(0, 8) + '01'; $('fim').value = mx;
-  }
-  function bindDrop(zone, input) {
-    input.addEventListener('change', () => { if (input.files.length) handleFiles([...input.files]); input.value = ''; });
-    zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag'); });
-    zone.addEventListener('dragleave', () => zone.classList.remove('drag'));
-    zone.addEventListener('drop', e => { e.preventDefault(); zone.classList.remove('drag'); if (e.dataTransfer.files.length) handleFiles([...e.dataTransfer.files]); });
   }
 
   /* ---------- processos de vendas ---------- */
@@ -1381,11 +1101,11 @@ if (typeof module !== 'undefined') module.exports = Core;
   const JORNADA_DEF = "Celia de Souza Lima ; 08:00:00 ; 14:00:00\nNeide Dagues Costa ; 08:00:00 ; 14:00:00\nVanusa Silvino ; 18:00:00 ; 23:59:59\nTalita Araujo Dos Santos ; 08:00:00 ; 14:00:00\nBeatriz de Oliveira Xavier ; 08:00:00 ; 14:00:00\nAndreia Ferreira de Oliveira ; 18:00:00 ; 23:59:59\nWillyan Gabriel Lopes Moreira De Almeida ; 08:00:00 ; 14:00:00\nMarcos Vinícius Ferreira Fontes ; 15:00:00 ; 21:00:00\nJULIA CAROLINE DA SILVA PESSOA ; 14:00:00 ; 20:00:00\nJOYCE ANDRESSA DA SILVA VALENTINO ; 15:00:00 ; 21:00:00\nSTHEFANNY DAYANNE DA SILVA ROBERTO ; 14:00:00 ; 20:00:00\nLEANDRA SANTOS LORENZETTI ; 08:00:00 ; 14:00:00\nGustavo Qualho Cazoni ; 08:00:00 ; 14:00:00\nVICTOR KENDY KOZINA ; 14:00:00 ; 20:00:00\nLucas Brito Medeiros Da Silva ; 15:00:00 ; 21:00:00\nEmily Emanuelly de Souza ; 15:00:00 ; 21:00:00\nAlessandra Rosa Cabral ; 15:00:00 ; 21:00:00\nMaria Victoria Marques ; 08:00:00 ; 14:00:00\nJulya Amanda Almeida Silva ; 14:00:00 ; 20:00:00\nAna Claudia Monteiro De Vasconcelos ; 08:00:00 ; 14:00:00\nERICK ALEXSANDER NASCIMENTO DOS SANTOS ; 08:00:00 ; 14:00:00\nPedro Henrique Ribeiro dos Santos ; 14:00:00 ; 20:00:00\nCAROLINE SILVA SANTOS ; 14:00:00 ; 20:00:00\nFernanda Magioto ; 08:00:00 ; 14:00:00\nIngrid Kawane Ribeiro Moreira ; 08:00:00 ; 14:00:00\nThayssa Victoria da Silva Pereira ; 14:00:00 ; 20:00:00\nGLACIANE CRISTINA DA SILVA ; 08:00:00 ; 14:00:00\nMaria Eduarda Toledo de Oliveira ; 14:00:00 ; 20:00:00\nHenrique Caua Cupertino Navarro ; 14:00:00 ; 20:00:00\nSABRINA MANOELA DOS SANTOS LIMA ; 14:00:00 ; 20:00:00\nSarah da Silva Purnucena ; 08:00:00 ; 14:00:00\nRosa Caroline Benedito ; 08:00:00 ; 14:00:00\nGiovanna Cadide Cabral ; 08:00:00 ; 14:00:00\nJulie Ndinga Zeferino da Silva ; 08:00:00 ; 14:00:00\nTHAILA LORRAINE RODRIGUES CORDEIRO ; 14:00:00 ; 20:00:00";
   /* ---------- init ---------- */
   function init() {
-    bindDrop($('zDrop'), $('fArq'));
     try { $('alias').value = localStorage.getItem('vendas_alias') ?? 'GUSTAVO CAZONI = GUSTAVO QUALHO CAZONI\nMARIA EDUARDA TOLEDO OLIVEIRA = MARIA EDUARDA TOLEDO DE OLIVEIRA'; $('fer').value = localStorage.getItem('vendas_fer') ?? '02/11/2026'; }
     catch (e) { $('alias').value = 'GUSTAVO CAZONI = GUSTAVO QUALHO CAZONI\nMARIA EDUARDA TOLEDO OLIVEIRA = MARIA EDUARDA TOLEDO DE OLIVEIRA'; $('fer').value = '02/11/2026'; }
     try { $('jornada').value = localStorage.getItem('vendas_jornada') ?? JORNADA_DEF; } catch (e) { $('jornada').value = JORNADA_DEF; }
     buildCicInputs(); initDis();
+    try { const c = JSON.parse(localStorage.getItem('vendas_cfg') || 'null'); if (c) aplicarCfg(c); } catch (e) {} // salvo na página Base de dados
     ['ini', 'fim'].forEach(id => $(id).addEventListener('change', () => { periodSet = true; $('fCiclo').value = ''; run(); }));
     ['mdVis', 'mdDia', 'mdSem', 'mdMes'].forEach(id => $(id).addEventListener('change', () => { const v = $('mdVis').value; $('mdDia').parentNode.hidden = v !== 'dia'; $('mdSem').parentNode.hidden = v !== 'sem'; $('mdMes').parentNode.hidden = v !== 'mes'; if (S.full) { S.models.md = mMedia(); renderTab(); } }));
     $('inDia').addEventListener('change', () => { if (S.full) { S.models.insc = mInscritos(); renderTab(); } });
@@ -1448,6 +1168,18 @@ if (typeof module !== 'undefined') module.exports = Core;
       S.topoVer = t.atualizado_em; S.topoShared = S.topo = t.valor.rows; S.temDq = !!t.valor.temDq;
       status('stTopo', `✓ ${S.topo.length.toLocaleString('pt-BR')} linhas · compartilhado (enviado por ${t.atualizado_por || '?'} em ${quando(t.atualizado_em)})`, true);
     }
+    const ins = m.insc; // inscritos publicados (só data e nome do consultor)
+    if (ins && ins.atualizado_em !== S.inscVer && (!S.insc || S.insc === S.inscShared)) {
+      S.inscVer = ins.atualizado_em; S.inscShared = S.insc = ins.valor.rows;
+      status('stInsc', `✓ ${S.insc.length.toLocaleString('pt-BR')} inscritos · compartilhado (enviado por ${ins.atualizado_por || '?'} em ${quando(ins.atualizado_em)})`, true);
+    }
+    const lt = await IDB.get('topo').catch(() => null); // importado neste computador e ainda não publicado: vale o mais novo
+    if (lt && (!t || lt.em > t.atualizado_em) && S.topo !== lt.rows) { S.topo = lt.rows; S.temDq = !!lt.temDq; status('stTopo', `✓ ${lt.rows.length.toLocaleString('pt-BR')} linhas · importado neste computador (não publicado)`, true); }
+    const li = await IDB.get('insc').catch(() => null);
+    if (li && (!ins || li.em > ins.atualizado_em) && S.insc !== li.rows) { S.insc = li.rows; status('stInsc', `✓ ${li.rows.length.toLocaleString('pt-BR')} inscritos · importado neste computador (não publicado)`, true); }
+    const la = await IDB.get('atend').catch(() => null); // Atendimentos (telefone/CPF) nunca saem deste computador
+    if (la && S.atend !== la.rows) { S.atend = la.rows; S.atendFill = false; status('stAtend', `✓ ${la.rows.length.toLocaleString('pt-BR')} atendimentos · só neste computador`, true); }
+    if (S.insc && S.insc.length && !$('inDia').value) $('inDia').value = S.insc.map(x => x.date).sort().pop();
     S.cfgTxt = S.cfgTxt || 'Parâmetros: ainda não salvos para todos';
   }
   async function atualizarTudo() {
@@ -1469,11 +1201,6 @@ if (typeof module !== 'undefined') module.exports = Core;
   }
   async function gateInit() {
     $('btnSb').addEventListener('click', atualizarTudo);
-    $('btnPubCfg').addEventListener('click', () => publicar('config', lerCfg()));
-    $('btnPubTopo').addEventListener('click', () => {
-      if (!S.topo) { $('stGeral').textContent = 'Carregue o arquivo do Topo antes de publicar.'; return; }
-      publicar('topo', { rows: S.topo.map(r => ({ nome: r.nome, qual: r.qual, mat: r.mat, date: r.date, dq: r.dq })), temDq: !!S.temDq }); // só estes campos: nada de CPF
-    });
     $('gForm').addEventListener('submit', ev => {
       ev.preventDefault();
       if ($('gSenha').value !== SENHA) { $('gErr').textContent = 'Senha incorreta. Tente novamente.'; $('gSenha').value = ''; $('gSenha').focus(); return; }
