@@ -33,7 +33,7 @@ details{margin-top:10px;font-size:.84rem}summary{cursor:pointer;color:var(--ac);
 <section class="card"><div class="ct"><h2 id="t1">Matrículas por dia</h2><span id="t1s"></span></div><div id="c1"></div>
  <details><summary>Ver dados do gráfico</summary><div id="c1t"></div></details></section>
 <div class="grid2">
- <section class="card"><div class="ct"><h2>Consultores — top 10</h2><span id="rkS"></span></div><ol class="rank" id="rk"></ol></section>
+ <section class="card"><div class="ct"><h2>Consultores — ranking completo</h2><span id="rkS"></span></div><ol class="rank" id="rk"></ol></section>
  <section class="card"><div class="ct"><h2>Por gestor</h2><span>no período</span></div><ol class="rank" id="gs"></ol></section>
 </div>
 <section class="card"><div class="ct"><h2>Evolução semanal</h2><span>últimas 12 semanas · a semana atual (tracejada) ainda está em andamento</span></div><div id="c2"></div></section>
@@ -94,7 +94,7 @@ function desenhar(){
  const avg=B.length?cur.length/B.length:0;$('c1').innerHTML=cur.length||B.length?colChart(B,un,avg):'<div class="empty">Sem dados.</div>';
  $('c1t').innerHTML=`<table><tr><th>${un==='dia'?'Dia':'Semana'}</th><th class="num">Matrículas</th></tr>${B.map(x=>`<tr><td>${x.k}</td><td>${x.n}</td></tr>`).join('')}</table>`;
  // ranking
- const bc=count(cur,'consultor');rank($('rk'),bc,cur.length||1,10);$('rkS').textContent=`${nf(bc.length)} consultores no período`;rank($('gs'),count(cur,'gestor'),cur.length||1,12);
+ const bc=count(cur,'consultor');rank($('rk'),bc,cur.length||1,bc.length);$('rkS').textContent=`${nf(bc.length)} consultores no período`;rank($('gs'),count(cur,'gestor'),cur.length||1,12);
  // semanal 12 semanas
  const m0=monday(h),W=[];for(let i=11;i>=0;i--){const a=iso(addD(fromIso(m0),-7*i)),b=iso(addD(fromIso(a),6)),c=inR(a,b).length;W.push({n:c,lab:br(a),tip:`Semana de ${brY(a)} a ${brY(b)} · ${c} matrículas${i===0?' (em andamento)':''}`})}
  $('c2').innerHTML=lineChart(W);
