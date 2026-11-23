@@ -1,5 +1,5 @@
 /* favicon (logo Vitru do GitHub) + fonte Onest (mesma da Unicesumar) */
-document.head.insertAdjacentHTML('beforeend','<link rel="icon" href="https://github.com/vitrucontactSales.png?size=64">');
+document.head.insertAdjacentHTML('beforeend','<link rel="icon" href="https://avatars.githubusercontent.com/u/269792220?s=64">');
 document.head.insertAdjacentHTML('beforeend','<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&display=swap">');
 /* cabeçalho/menus por perfil */
 function topo(u,ativa){const L={admin:[['index.html','Início'],['formulario.html','Formulário'],['dashboard.html','Dashboard'],['painel.html','Painel de Vendas'],['base.html','Base de dados'],['tratativas.html','Aprovações'],['admin.html','Usuários']],
@@ -13,3 +13,4 @@ const CANDIDATO_OK=v=>/^20(2[6-9]|[3-9]\d)/.test(v);
 /* mesmo gestor escrito de formas diferentes no banco -> um nome só (sempre o nome completo) */
 const GESTOR_ALIAS={'Clayton Santos':'Clayton Eugenio Ramos dos Santos','Rafael Pereira':'Rafael Marcos Pereira','Jhonatan Dias':'Jhonatan Erik Ribeiro Dias'};
 const gestorNome=n=>GESTOR_ALIAS[String(n||'').trim()]||n;
+ 
