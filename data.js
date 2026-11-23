@@ -8,6 +8,12 @@ const Trat={K:'proto_trat',
   cpfOk(c){c=String(c).replace(/\D/g,'');if(c.length!==11||/^(\d)\1{10}$/.test(c))return false;
     const d=n=>{let s=0;for(let i=0;i<n;i++)s+=c[i]*(n+1-i);return(s*10)%11%10};return d(9)==c[9]&&d(10)==c[10]},
   mask(c){c=String(c||'').replace(/\D/g,'').slice(0,11);return c.replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d{1,2})$/,'$1-$2')}};
+/* Edições de registros (admin/gestor): sobrepõe campos do registro e guarda histórico (quem, quando, antes→depois, justificativa). Só neste navegador, como Trat. */
+const Edic={K:'proto_edic',
+  todos(){try{return JSON.parse(localStorage.getItem(this.K))||{}}catch(e){return{}}},
+  aplicar(r){const e=this.todos()[r.id];return e?{...r,...e.campos,editado:true}:r},
+  hist(id){return(this.todos()[id]||{}).hist||[]},
+  salvar(id,antes,novos,motivo,por){const t=this.todos(),e=t[id]||{campos:{},hist:[]};e.campos={...e.campos,...novos};e.hist.push({em:new Date().toISOString(),por,motivo,antes,depois:novos});t[id]=e;localStorage.setItem(this.K,JSON.stringify(t))}};
 const Dados={
   async sb(){if(!window.supabase){await new Promise((ok,er)=>{const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';s.onload=ok;s.onerror=er;document.head.appendChild(s)})}return this._sb||(this._sb=window.supabase.createClient(CFG.URL,CFG.KEY))},
   mat(){try{return JSON.parse(localStorage.getItem('proto_mat'))||[]}catch(e){return[]}},
