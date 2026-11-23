@@ -3,7 +3,7 @@
 <form id="f"><div class="row"><div><label>Consultor</label><select id="consultor" required></select></div><div><label>Gestor</label><select id="gestor" required></select></div></div>
 <div class="row"><div><label>Número do candidato (AAAA + processo + sequência, ex.: 202751…)</label><input id="candidato" inputmode="numeric" required><div id="hCand" class="mut" style="font-size:.8rem;margin-top:5px"></div></div><div><label>Data do pagamento</label><input id="data" type="date" required><div id="hData" class="mut" style="font-size:.8rem;margin-top:5px"></div></div></div>
 <div class="row"><div><label>Polo</label><input id="polo"></div><div><label>Tipo de curso</label><select id="tipo"><option>Graduação</option><option>Pós-Graduação</option><option>Ed. Continuada</option><option>Técnico</option></select></div></div>
-<label>Link da conversa</label><input id="link"><label>Observações</label><textarea id="obs" rows="2"></textarea><p><button>Registrar matrícula</button></p></form></div>
+<label>Link da conversa</label><input id="link"><label>Comprovante de pagamento (foto, print ou PDF)</label><input id="comp" type="file" accept="image/*,application/pdf"><div class="mut" style="font-size:.8rem;margin-top:5px">Boleto ou Pix enviado pelo candidato. Opcional, mas a tela de Aprovação sinaliza registros sem comprovante.</div><label>Observações</label><textarea id="obs" rows="2"></textarea><p><button>Registrar matrícula</button></p></form></div>
 <div class="card"><h1 id="tl">Registros do protótipo</h1><div id="lista"></div></div></main>
 <script src="auth.js"></script><script src="common.js"></script><script src="data.js"></script><script src="config.js"></script><script src="sample.js"></script><script src="processos.js"></script><script>
 let u,PA=null;const $=id=>document.getElementById(id),m=(t,c)=>$('msg').innerHTML=t?`<div class="msg ${c}">${t}</div>`:'';
@@ -11,11 +11,11 @@ const pode=()=>u.perfil!=='consultor';
 function lista(){let a=Dados.mat().filter(r=>!r.excluido_em);if(!pode())a=a.filter(r=>r.consultor===u.nome);
  $('tl').textContent=pode()?'Registros do protótipo (todos)':'Meus registros';
  $('lista').innerHTML=a.length?`<table><tr><th>Candidato</th><th>Consultor</th><th>Pagamento</th><th>Polo</th><th>Curso</th><th></th></tr>${a.slice().reverse().map(r=>`<tr><td>${esc(r.candidato)}</td><td>${esc(r.consultor)}</td><td>${esc(r.data)}</td><td>${esc(r.polo)}</td><td>${esc(r.tipo)}</td><td>${pode()?`<button class="sec" data-ed="${r.id}">✏️</button> <button class="sec" data-del="${r.id}">🗑️</button>`:''}</td></tr>`).join('')}</table>`:'<span class="mut">Nenhum registro feito neste navegador.</span>'}
-$('f').onsubmit=e=>{e.preventDefault();const c=$('candidato').value.trim();
+$('f').onsubmit=async e=>{e.preventDefault();const F=$('comp').files[0],W=F?await Comp.ler(F).catch(x=>(m('Comprovante: '+x.message,'er'),0)):null;if(F&&!W)return;const c=$('candidato').value.trim();
  if(!CANDIDATO_OK(c))return m('Número do candidato inválido: deve começar com o ano (2026, 2027…). Não use CPF.','er');
  const mat=Dados.mat();if(mat.some(r=>!r.excluido_em&&r.candidato===c))return m('Candidato já registrado.','er');
  mat.push({id:crypto.randomUUID(),candidato:c,consultor:$('consultor').value,gestor:$('gestor').value,data:$('data').value,polo:$('polo').value.trim(),tipo:$('tipo').value,link:$('link').value.trim(),obs:$('obs').value.trim(),registrado_em:new Date().toISOString(),por:u.email,processo:(Proc.de($('data').value)||{}).rot||null});
- Dados.salvarMat(mat);$('f').reset();$('data').valueAsDate=new Date();dicas();m('Matrícula registrada (somente neste protótipo).','ok');lista()};
+ Dados.salvarMat(mat);if(W)try{Comp.salvar(mat[mat.length-1].id,W,u.email)}catch(x){m('Registrado, mas o comprovante não foi guardado: '+x.message,'er');return lista()}$('f').reset();$('data').valueAsDate=new Date();dicas();m('Matrícula registrada (somente neste protótipo).','ok');lista()};
 document.addEventListener('click',e=>{if(!pode())return;const t=e.target,mat=Dados.mat();
  if(t.dataset.del&&confirm('Excluir este registro? (fica guardado, marcado como excluído)')){mat.find(r=>r.id===t.dataset.del).excluido_em=new Date().toISOString();Dados.salvarMat(mat);lista()}
  if(t.dataset.ed){const r=mat.find(x=>x.id===t.dataset.ed),n=prompt('Novo número do candidato:',r.candidato);if(n!==null){if(!CANDIDATO_OK(n.trim()))return m('Número inválido.','er');r.candidato=n.trim();Dados.salvarMat(mat);lista()}}});
