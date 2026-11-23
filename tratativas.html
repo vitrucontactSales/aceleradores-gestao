@@ -9,6 +9,8 @@ td input{height:34px;padding:4px 8px;min-width:130px}td input.bad{border-color:v
 .st.p{background:#fff4d6;color:#7a4b00}.st.a{background:#ecfdf3;color:#085d3a}.st.r{background:#fef3f2;color:#912018}
 td .acts{display:flex;gap:6px;white-space:nowrap}td button{padding:5px 10px;font-size:.8rem}button.ok{background:var(--ok);border-color:var(--ok)}
 .pg{display:flex;gap:10px;align-items:center;justify-content:flex-end;margin-top:12px;font-size:.85rem}
+.lk{display:inline-block;margin-left:6px;padding:2px 9px;border-radius:999px;background:#eff4ff;border:1px solid #c7d7fe;color:var(--ac);font-size:.74rem;font-weight:650;text-decoration:none;white-space:nowrap}.lk:hover{background:var(--ac);color:#fff}
+#eF label{margin:8px 0 3px}#eH{font-size:.74rem;margin-top:12px;max-height:110px;overflow:auto}#ed{max-width:520px}
 dialog{border:1px solid var(--line);border-radius:var(--r);padding:22px;max-width:420px;width:92vw}dialog::backdrop{background:rgba(15,31,77,.35)}
 </style></head><body><main>
 <h1>Aprovação de matrículas</h1><p class="mut" id="sub">Carregando…</p><div id="msg"></div>
@@ -25,6 +27,7 @@ dialog{border:1px solid var(--line);border-radius:var(--r);padding:22px;max-widt
 <section class="card"><div class="tbl-wrap"><table id="t"></table></div><div class="pg"><span id="pgI"></span><button class="sec" id="ant" type="button">‹</button><button class="sec" id="prox" type="button">›</button></div></section>
 </main>
 <dialog id="dlg"><form method="dialog"><h1>Reprovar matrícula</h1><p class="mut" id="dQ"></p><label for="dM">Motivo</label><textarea id="dM" rows="3" required></textarea><div style="display:flex;gap:10px;justify-content:flex-end;margin-top:14px"><button class="sec" value="x" formnovalidate>Cancelar</button><button class="dg" id="dOk" value="ok">Reprovar</button></div></form></dialog>
+<dialog id="ed"><form onsubmit="return false"><h1>Editar registro</h1><p class="mut" id="eQ"></p><div id="eF"></div><label for="eM" id="eML">Observação (justificativa da alteração)</label><textarea id="eM" rows="2"></textarea><div class="msg er hide" id="eE"></div><div id="eH" class="mut"></div><div style="display:flex;gap:10px;justify-content:flex-end;margin-top:14px"><button class="sec" type="button" id="eX">Cancelar</button><button type="button" id="eOk">Salvar alteração</button></div></form></dialog>
 <script src="vendor/exceljs.min.js"></script><script src="config.js"></script><script src="auth.js"></script><script src="common.js"></script><script src="data.js"></script><script src="sample.js"></script><script src="processos.js"></script><script>
 const $=i=>document.getElementById(i),TAM=50,LAB={pendente:['p','⏳ Pendente'],aprovado:['a','✔ Aprovado'],reprovado:['r','✖ Reprovado']};
 let me,ALL=[],FIL=[],pag=0,alvo=null;
@@ -42,14 +45,28 @@ function desenhar(){const T=Trat.todos(),n=FIL.length,cont={pendente:0,aprovado:
  $('kpis').innerHTML=[['Registros',n],['Pendentes',cont.pendente],['Aprovados',cont.aprovado],['Reprovados',cont.reprovado]].map(([l,v])=>`<div class="kpi"><div class="l">${l}</div><div class="v">${v.toLocaleString('pt-BR')}</div></div>`).join('');
  const pg=FIL.slice(pag*TAM,pag*TAM+TAM);
  $('t').innerHTML=`<thead><tr><th>Registro</th><th>Consultor</th><th>Gestor</th><th>Nº candidato</th><th>CPF do novo aluno</th><th>Matrícula</th><th>Situação</th><th>Ação Auditoria</th></tr></thead><tbody>${pg.map(r=>{const t=T[r.id]||{},st=t.status||'pendente',[k,l]=LAB[st];
-  return`<tr data-id="${esc(r.id)}"><td>${dt(r.registrado_em)}${r.link_conversa?` <a href="${esc(r.link_conversa)}" target="_blank" rel="noopener" title="Abrir conversa">↗</a>`:''}</td><td>${esc(r.consultor)}</td><td>${esc(r.gestor||'—')}</td><td>${esc(r.candidato||'—')}</td>
+  return`<tr data-id="${esc(r.id)}"><td>${dt(r.registrado_em)}${r.link_conversa?` <a href="${esc(r.link_conversa)}" target="_blank" rel="noopener" class="lk" title="Abrir a conversa deste registro">💬 Conversa ↗</a>`:''}</td><td>${esc(r.consultor)}</td><td>${esc(r.gestor||'—')}</td><td>${esc(r.candidato||'—')}${r.editado?' <span class="mut" style="font-size:.72rem" title="Registro editado — veja o histórico em Editar">✎ editado</span>':''}</td>
   <td><input data-f="cpf" value="${esc(Trat.mask(t.cpf))}" placeholder="000.000.000-00" inputmode="numeric" aria-label="CPF"></td><td><input data-f="matricula" value="${esc(t.matricula||'')}" placeholder="Nº da matrícula" aria-label="Matrícula"></td>
   <td><span class="st ${k}">${l}</span>${t.por?`<div class="mut" style="font-size:.72rem">${esc(t.por)} · ${dt((t.em||'').slice(0,10))}</div>`:''}${t.motivo?`<div class="mut" style="font-size:.72rem" title="${esc(t.motivo)}">Motivo: ${esc(t.motivo.slice(0,40))}</div>`:''}</td>
-  <td><div class="acts">${st!=='aprovado'?'<button class="ok" data-a="aprovado">Aprovar</button>':''}${st!=='reprovado'?'<button class="dg" data-a="reprovado">Reprovar</button>':''}${st!=='pendente'?'<button class="sec" data-a="pendente">Desfazer</button>':''}</div></td></tr>`}).join('')||'<tr><td colspan="8" class="mut" style="text-align:center;padding:30px">Nenhum registro encontrado.</td></tr>'}</tbody>`;
+  <td><div class="acts"><button class="sec" data-e="1">✏️ Editar</button>${st!=='aprovado'?'<button class="ok" data-a="aprovado">Aprovar</button>':''}${st!=='reprovado'?'<button class="dg" data-a="reprovado">Reprovar</button>':''}${st!=='pendente'?'<button class="sec" data-a="pendente">Desfazer</button>':''}</div></td></tr>`}).join('')||'<tr><td colspan="8" class="mut" style="text-align:center;padding:30px">Nenhum registro encontrado.</td></tr>'}</tbody>`;
  $('pgI').textContent=n?`${pag*TAM+1}–${Math.min(n,pag*TAM+TAM)} de ${n.toLocaleString('pt-BR')}`:'';$('ant').disabled=pag<=0;$('prox').disabled=pag>=mx}
 function decidir(id,status,motivo){Trat.set(id,{status,motivo:motivo||'',por:me.nome,em:new Date().toISOString()});m(status==='pendente'?'Decisão desfeita.':'Registro '+status+'.','ok');filtrar()}
-document.addEventListener('click',e=>{const b=e.target.closest('button[data-a]');if(!b)return;const id=b.closest('tr').dataset.id;
+document.addEventListener('click',e=>{const be=e.target.closest('button[data-e]');if(be)return abrirEd(be.closest('tr').dataset.id);const b=e.target.closest('button[data-a]');if(!b)return;const id=b.closest('tr').dataset.id;
  if(b.dataset.a==='reprovado'){alvo=id;const r=ALL.find(x=>String(x.id)===id);$('dQ').textContent=(r.consultor||'')+' · candidato '+(r.candidato||'—');$('dM').value='';$('dlg').showModal()}else decidir(id,b.dataset.a)});
+const CAMPOS=[['consultor','Consultor'],['gestor','Gestor'],['candidato','Nº do candidato'],['data_pagamento','Data do pagamento','date'],['polo','Polo'],['tipo_curso','Tipo de curso'],['link_conversa','Link da conversa']],
+ val=(r,k,t)=>String(r[k]??'').slice(0,t==='date'?10:9999);
+function abrirEd(id){alvo=id;const r=ALL.find(x=>String(x.id)===id);$('eQ').textContent=(r.consultor||'')+' · candidato '+(r.candidato||'—');
+ $('eF').innerHTML=CAMPOS.map(([k,l,t])=>`<label>${l}</label><input data-k="${k}" type="${t||'text'}" value="${esc(val(r,k,t))}">`).join('');
+ $('eM').value='';$('eE').classList.add('hide');$('eML').textContent='Observação (justificativa da alteração)'+(me.perfil==='gestor'?' — obrigatória':'');
+ const H=Edic.hist(id);$('eH').innerHTML=H.length?'<b>Histórico</b><br>'+H.slice().reverse().map(h=>`${dt(h.em.slice(0,10))} · ${esc(h.por)} · ${Object.keys(h.depois).map(k=>esc(k)+': '+esc(h.antes[k]||'—')+' → '+esc(h.depois[k]||'—')).join('; ')}${h.motivo?' · “'+esc(h.motivo)+'”':''}`).join('<br>'):'';
+ $('ed').showModal()}
+$('eX').onclick=()=>$('ed').close();
+$('eOk').onclick=()=>{const r=ALL.find(x=>String(x.id)===alvo),n={},a={},mo=$('eM').value.trim(),er=t=>{$('eE').textContent=t;$('eE').classList.remove('hide')};
+ document.querySelectorAll('#eF input').forEach(i=>{const v=i.value.trim();if(v!==val(r,i.dataset.k,i.type)){n[i.dataset.k]=v;a[i.dataset.k]=r[i.dataset.k]??''}});
+ if(!Object.keys(n).length)return er('Nenhum campo foi alterado.');
+ if(n.candidato!==undefined&&!CANDIDATO_OK(n.candidato))return er('Nº do candidato inválido: deve começar com o ano (2026, 2027…). Não use CPF.');
+ if(me.perfil==='gestor'&&!mo)return er('Informe a observação justificando a alteração.');
+ Edic.salvar(alvo,a,n,mo,me.nome);Object.assign(r,n,{editado:true});$('ed').close();m('Registro editado e alteração registrada no histórico.','ok');opcoes();filtrar()};
 $('dlg').addEventListener('close',()=>{if($('dlg').returnValue==='ok'&&$('dM').value.trim())decidir(alvo,'reprovado',$('dM').value.trim())});
 document.addEventListener('change',e=>{const i=e.target;if(!i.dataset.f)return;const id=i.closest('tr').dataset.id;
  if(i.dataset.f==='cpf'){const v=dig(i.value);if(v&&!Trat.cpfOk(v)){i.classList.add('bad');m('CPF inválido — confira os 11 dígitos.','er');return}i.classList.remove('bad');m('');Trat.set(id,{cpf:v});i.value=Trat.mask(v)}
@@ -88,6 +105,7 @@ Auth.ready.then(async()=>{me=Auth.require(['gestor','admin']);topo(me,'tratativa
  $('fp').innerHTML='<option value="">Todos</option>'+Proc.C.map(c=>`<option value="${c.n}">Processo ${c.rot}</option>`).join('');
  const b=await Dados.base('real');ALL=b.rows.map((r,i)=>({...r,id:r.id??('amostra-'+i)}));const G={};ALL.forEach(r=>{if(r.consultor&&r.gestor)G[r.consultor]=r.gestor});
  ALL=ALL.concat(Dados.mat().map((r,i)=>({...r,id:r.id??('local-'+i),gestor:r.gestor||G[r.consultor]||''})));
+ ALL=ALL.map(Edic.aplicar.bind(Edic));
  if(me.perfil==='gestor'){ALL=ALL.filter(r=>norm(r.gestor)===norm(me.nome));$('fg').parentElement.hidden=true}  // gestor vê só a própria equipe (no Supabase: RLS por gestor)
  $('sub').textContent=(me.perfil==='gestor'?'Equipe de '+me.nome+' · ':'')+(b.fonte==='real'?'Fonte: banco real (somente leitura)':'Fonte: amostra local')+' · aprovação, CPF e matrícula ficam só neste navegador (o banco ainda não tem esses campos)';opcoes();filtrar()});
 </script></body></html>
