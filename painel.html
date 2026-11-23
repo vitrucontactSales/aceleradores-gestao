@@ -795,14 +795,14 @@ if (typeof module !== 'undefined') module.exports = Core;
     const eqOf = new Map(S.full.rows.map(r => [r.chave, r.eq])), fe = $('fEquipe').value, have = new Set(ds.cons.map(c => c.chave)), L = [...ds.cons, ...S.full.rows.filter(r => r.rost && !have.has(r.chave)).map(r => ({ chave: r.chave, gestor: r.gestor || '(Sem gestor)' }))].filter(c => (!fg || c.gestor === fg) && (!fc || c.chave === fc) && (!fe || eqOf.get(c.chave) === fe)).map(c => { const at = (ds.map.get(c.chave) || []).length, v = vOf.get(c.chave) || 0; return { ...c, at, v, p: at ? v / at : null }; }).sort((a, b) => (b.p ?? -1) - (a.p ?? -1) || a.chave.localeCompare(b.chave, 'pt-BR'));
     const at = L.reduce((a, x) => a + x.at, 0), v = L.reduce((a, x) => a + x.v, 0), G = new Map(); L.forEach(x => { const o = G.get(x.gestor) || G.set(x.gestor, { at: 0, v: 0 }).get(x.gestor); o.at += x.at; o.v += x.v; });
     const pc = (v, at) => at ? C(v / at, pf(v / at), 'b', 'p') : C(null, '—', '', 'p');
-    const isJ = c => Core.norm(c.gestor).includes('JHONATAN DIAS'), isS = c => !c.gestor || c.gestor === '(Sem gestor)';
+    const isJ = c => /JHONATAN.*DIAS/.test(Core.norm(c.gestor)), isS = c => !c.gestor || c.gestor === '(Sem gestor)';
     const agg = f => { const q = ds.cons.filter(f); const t = q.reduce((o, c) => { o.at += (ds.map.get(c.chave) || []).length; o.v += vOf.get(c.chave) || 0; return o; }, { at: 0, v: 0 }); return { n: q.length, ...t }; };
-    const gr = [['Sem gestor', agg(isS)], ['Jhonatan Dias', agg(isJ)], ['Sem gestor + Jhonatan Dias', agg(c => isS(c) || isJ(c))], ['Demais gestores', agg(c => !isS(c) && !isJ(c))]];
+    const gr = [['Sem gestor', agg(isS)], ['Jhonatan Erik Ribeiro Dias', agg(isJ)], ['Sem gestor + Jhonatan Erik Ribeiro Dias', agg(c => isS(c) || isJ(c))], ['Demais gestores', agg(c => !isS(c) && !isJ(c))]];
     const cmpRow = ([nm, o]) => [C(nm), N(o.n), N(o.at), N(o.v), pc(o.v, o.at), C(o.n ? o.at / o.n : null, o.n ? (o.at / o.n).toLocaleString('pt-BR', { maximumFractionDigits: 1 }) : '—', '', 'n'), C(o.n ? o.v / o.n : null, o.n ? (o.v / o.n).toLocaleString('pt-BR', { maximumFractionDigits: 1 }) : '—', 'b', 'n')];
     const A = gr[2][1], B = gr[3][1], ra = A.at ? A.v / A.at : -1, rb = B.at ? B.v / B.at : -1, pa = A.n ? A.v / A.n : -1, pb = B.n ? B.v / B.n : -1;
     const w = (x, y, nx, ny) => x === y ? 'empate' : x > y ? nx : ny;
-    const cmp = { cap: 'Comparativo: Sem gestor + Jhonatan Dias × demais gestores', head: ['Equipe', 'Consultores', 'Atendimentos enviados', 'Vendas no período', 'Aproveitamento', 'Atendimentos por consultor', 'Vendas por consultor'], rows: gr.map(cmpRow),
-      note: `Mais produtivo por aproveitamento: ${w(ra, rb, 'Sem gestor + Jhonatan Dias', 'Demais gestores')} · por vendas por consultor: ${w(pa, pb, 'Sem gestor + Jhonatan Dias', 'Demais gestores')}.` + (ds.cons.some(isS) ? '' : ' (Sem gestor está oculto: desmarque "ocultar sem gestor" para incluí-los.)') };
+    const cmp = { cap: 'Comparativo: Sem gestor + Jhonatan Erik Ribeiro Dias × demais gestores', head: ['Equipe', 'Consultores', 'Atendimentos enviados', 'Vendas no período', 'Aproveitamento', 'Atendimentos por consultor', 'Vendas por consultor'], rows: gr.map(cmpRow),
+      note: `Mais produtivo por aproveitamento: ${w(ra, rb, 'Sem gestor + Jhonatan Erik Ribeiro Dias', 'Demais gestores')} · por vendas por consultor: ${w(pa, pb, 'Sem gestor + Jhonatan Erik Ribeiro Dias', 'Demais gestores')}.` + (ds.cons.some(isS) ? '' : ' (Sem gestor está oculto: desmarque "ocultar sem gestor" para incluí-los.)') };
     return { cmp, head: ['Consultor', 'Gestor', 'Atendimentos enviados', 'Vendas no período', 'Aproveitamento'], rows: L.map(x => [C(x.chave), C(x.gestor), N(x.at), N(x.v), pc(x.v, x.at)]),
       foot: [C('TOTAL'), C(''), N(at), N(v), pc(v, at)],
       note: `Aproveitamento = vendas (Acelerador + Topo, ${dmy(S.p.ini)} a ${dmy(S.p.fim)}) ÷ atendimentos distribuídos na aba Distribuição (${nf(ds.L.length)} atendimentos para ${ds.cons.length} consultores) · por gestor: ` + [...G].map(([g, o]) => `${g} ${o.at ? pf(o.v / o.at) : '—'}`).join(' · ') + ' · as vendas do período não vêm só desses atendimentos: é um indicador de proporção, não conversão exata.' };
@@ -1422,7 +1422,7 @@ if (typeof module !== 'undefined') module.exports = Core;
       const { data, error } = await SB.from('aceleradores_matriculas').select('consultor,registrado_em,gestor').order('id').range(from, from + PAGE - 1);
       if (error) throw error; all = all.concat(data); if (data.length < PAGE) break; from += PAGE;
     }
-    const r = Core.parseAceleradorObjs(all.map(d => ({ 'CONSULTOR(A)': d.consultor, 'REGISTRADO EM': d.registrado_em, 'GESTOR': d.gestor })));
+    const r = Core.parseAceleradorObjs(all.map(d => ({ 'CONSULTOR(A)': d.consultor, 'REGISTRADO EM': d.registrado_em, 'GESTOR': gestorNome(d.gestor) })));
     S.acel = r.rows; status('stAcel', `✓ ${r.rows.length.toLocaleString('pt-BR')} registros · banco (Supabase)` + (r.bad ? ` (${r.bad} ignorados)` : ''), true);
     autoPeriod(); run();
   }
