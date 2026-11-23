@@ -1,4 +1,5 @@
-/* fonte Onest (mesma da Unicesumar) */
+/* favicon (logo Vitru do GitHub) + fonte Onest (mesma da Unicesumar) */
+document.head.insertAdjacentHTML('beforeend','<link rel="icon" href="https://github.com/vitrucontactSales.png?size=64">');
 document.head.insertAdjacentHTML('beforeend','<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&display=swap">');
 /* cabeçalho/menus por perfil */
 function topo(u,ativa){const L={admin:[['index.html','Início'],['formulario.html','Formulário'],['dashboard.html','Dashboard'],['painel.html','Painel de Vendas'],['base.html','Base de dados'],['tratativas.html','Aprovações'],['admin.html','Usuários']],
