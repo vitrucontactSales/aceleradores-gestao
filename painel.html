@@ -46,10 +46,11 @@ textarea{min-height:70px;resize:vertical}
 table{border-collapse:separate;border-spacing:0;width:100%;font-size:13px}
 caption{text-align:left;padding:8px 10px;font-weight:700;color:var(--pri)}
 th,td{padding:6px 9px;border-bottom:1px solid var(--line);white-space:nowrap;text-align:right}
-thead th{background:#eef2f9;position:sticky;top:0;z-index:2}thead th.grp{text-align:center;background:#dbe4f4;color:var(--pri)}tbody tr.sub th,tbody tr.sub td{background:#eef2f9;font-weight:700;border-top:1px solid #b8c4dc;border-bottom:2px solid #b8c4dc}
+thead th{background:#eef2f9;position:sticky;top:0;z-index:2}thead th.grp{text-align:center;background:#dbe4f4;color:var(--pri)}
 table.two thead tr:nth-child(2) th{top:32px}
 th.sortable{padding:0}th.sortable button{all:unset;display:block;cursor:pointer;padding:6px 9px;width:100%;box-sizing:border-box;font-weight:700;text-align:right}th.sortable button:focus-visible{outline:3px solid #f2a900;outline-offset:-3px}
 tbody th{font-weight:400;text-align:left}td.txt,th.txt{text-align:left}thead th:first-child button{text-align:left}.chk label{display:inline!important;margin:0}td.ctr{text-align:center}th.sortable.txt button{text-align:left}
+tbody tr.sub th,tbody tr.sub td{background:#eef2f9!important;font-weight:700}
 tbody th,thead th:first-child,tfoot th{position:sticky;left:0;background:#fff;z-index:1;min-width:230px;text-align:left}thead th:first-child{background:#eef2f9;z-index:3}
 tbody tr:hover>*{background:#f7f9fd}tfoot th,tfoot td{font-weight:700;background:#eef2f9;position:sticky;bottom:0;z-index:2}
 td.ok{background:var(--okb);color:var(--ok)}td.bad{background:var(--badb);color:var(--bad)}td.mid{background:var(--midb);color:var(--mid)}td.dim{color:var(--mut)}td.b{font-weight:700}
@@ -475,6 +476,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     r.weeks.forEach((w, i) => { const s = f => r.rows.reduce((a, x) => a + x.weeks[i][f], 0); const m = s('meta'), tt = s('tot'); foot.push(N(s('qp')), N(s('ac')), N(s('tp')), P(r.totals.qual ? s('tp') / r.totals.qual : null), N(tt), N(m), P(m ? tt / m : null), N(s('falta')), C(''), C('')); });
     return { head, rows, foot, groups };
   }
+  function grpRows(L) { const G = new Map(); L.forEach(x => { const g = x.g || '(Sem gestor)'; if (!G.has(g)) G.set(g, []); G.get(g).push(x); }); const sm = (a, f) => a.reduce((t, x) => t + x[f], 0), out = []; [...G].sort((p, q) => sm(q[1], 'i') - sm(p[1], 'i') || p[0].localeCompare(q[0], 'pt-BR')).forEach(([g, a]) => { a.forEach(x => out.push([C(g), C(x.k), N(x.i, 'b'), N(x.a), N(x.t), N(x.a + x.t, 'b')])); const t = [C('Total ' + g), C(''), N(sm(a, 'i'), 'b'), N(sm(a, 'a'), 'b'), N(sm(a, 't'), 'b'), N(sm(a, 'a') + sm(a, 't'), 'b')]; t.tot = true; out.push(t); }); return out; }
   function mInscritos_() { // por consultor, no dia escolhido: inscritos + vendas do Acelerador e do Topo daquele dia
     const dia = $('inDia').value; if (!S.insc || !dia) return null;
     const d = Core.compute({ ...S.p, ini: dia, fim: dia, forcar: new Map() }), byD = new Map(d.rows.map(r => [r.chave, r]));
@@ -486,16 +488,9 @@ https://github.com/nodeca/pako/blob/main/LICENSE
       .filter(x => (!hide || x.g || rostSet.has(x.k)) && (!fg || (x.g || '(Sem gestor)') === fg) && (!fc || x.k === fc) && (!fe || eqOf.get(x.k) === fe) && (x.i || x.a || x.t || rostSet.has(x.k)))
       .sort((x, y) => y.i - x.i || (y.a + y.t) - (x.a + x.t) || x.k.localeCompare(y.k, 'pt-BR'));
     const s = f => L.reduce((a, x) => a + x[f], 0);
-    const J = S.p && S.p.jornada, eqc = k => C((J && J.size && Core.equipe(J.get(k))) || '—', null, 'dim'), SG = '(Sem gestor)', grp = new Map();
-    L.forEach(x => { const g = x.g || SG; if (!grp.has(g)) grp.set(g, []); grp.get(g).push(x); });
-    const gs = [...grp.entries()].sort((a, b) => (a[0] === SG) - (b[0] === SG) || b[1].reduce((n, x) => n + x.i, 0) - a[1].reduce((n, x) => n + x.i, 0) || a[0].localeCompare(b[0], 'pt-BR')), grows = [];
-    gs.forEach(([g, xs]) => { // um bloco por gestor: nome na 1ª coluna e total do gestor ao final
-      xs.forEach((x, n) => grows.push([C(n ? '' : g), C(x.k), eqc(x.k), N(x.i, 'b'), N(x.a), N(x.t), N(x.a + x.t, 'b')]));
-      const sm = f => xs.reduce((a, x) => a + x[f], 0), tr = [C('Total ' + g), C(xs.length + ' consultor(es)'), C(''), N(sm('i')), N(sm('a')), N(sm('t')), N(sm('a') + sm('t'))]; tr.sub = true; grows.push(tr);
-    });
-    return { grouped: true, head: ['Gestor', 'Consultor', 'Equipe', 'Inscritos', 'Acelerador', 'Topo', 'Total vendas'],
-      rows: grows,
-      foot: [C('TOTAL'), C(''), C(''), N(s('i')), N(s('a')), N(s('t')), N(s('a') + s('t'))],
+    return { head: ['Gestor', 'Consultor', 'Inscritos', 'Acelerador', 'Topo', 'Total vendas'],
+      grp: true, rows: grpRows(L),
+      foot: [C('TOTAL'), C(''), N(s('i')), N(s('a')), N(s('t')), N(s('a') + s('t'))],
       note: `Dia ${dmy(dia)} · fora da tabela: ${nf(dig)} inscrito(s) pelo canal DIGITAL e ${nf(nr)} sem registro de consultor (Não Registrado).` };
   }
   function mSemGestor_() { // consultores sem gestor: quanto pesam no total de vendas e a média por consultor, comparada à dos consultores com gestor
@@ -614,7 +609,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     const m = S.models[S.tab], box = $('tbl');
     const srt = S.sort[S.tab];
     let rows = m.rows.slice();
-    if (srt && !m.grouped) rows.sort((a, b) => { const x = a[srt.i].v, y = b[srt.i].v; const c = (x ?? -1) > (y ?? -1) ? 1 : (x ?? -1) < (y ?? -1) ? -1 : 0; return srt.d * c; });
+    if (srt && !m.grp) rows.sort((a, b) => { const x = a[srt.i].v, y = b[srt.i].v; const c = (x ?? -1) > (y ?? -1) ? 1 : (x ?? -1) < (y ?? -1) ? -1 : 0; return srt.d * c; });
     const table = el('table', m.groups ? 'two' : ''), thead = el('thead');
     table.append(el('caption', '', CAP[S.tab]));
     if (m.groups) { const g = el('tr'); Array.from({ length: m.lead || 3 }).forEach(() => { const e = el('th'); e.scope = 'col'; g.append(e); }); m.groups.forEach(x => { const th = el('th', 'grp', (x.cic ? '' : 'Semana ') + x.lb); th.colSpan = x.n; th.scope = 'colgroup'; g.append(th); }); thead.append(g); }
@@ -629,7 +624,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     thead.append(hr);
     const cell = (c, first) => { const e = first ? el('th', '', c.t) : el('td', clsOf(c) + (c.k === 's' ? (c.c ? ' ctr' : ' txt') : ''), c.t); if (first) e.scope = 'row'; return e; };
     const tb = el('tbody');
-    rows.forEach(r => { const tr = el('tr', r.sub ? 'sub' : ''); r.forEach((c, i) => tr.append(cell(c, i === 0))); tb.append(tr); });
+    rows.forEach(r => { const tr = el('tr', r.tot ? 'sub' : ''); r.forEach((c, i) => tr.append(cell(c, i === 0))); tb.append(tr); });
     table.append(thead, tb);
     const tf = el('tfoot');
     [m.foot, m.foot2].forEach(f => { if (f) { const tr = el('tr'); f.forEach((c, i) => tr.append(cell(c, i === 0))); tf.append(tr); } });
@@ -638,7 +633,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     if (m.cmp) { const t2 = el('table'), h2 = el('tr'), b2 = el('tbody'); t2.append(el('caption', '', m.cmp.cap)); m.cmp.head.forEach(h => { const th = el('th', '', h); th.scope = 'col'; h2.append(th); }); const th2 = el('thead'); th2.append(h2); t2.append(th2); m.cmp.rows.forEach(r => { const tr = el('tr'); r.forEach((c, i) => tr.append(cell(c, i === 0))); b2.append(tr); }); t2.append(b2); box.append(t2, el('p', 'hint', m.cmp.note)); }
     $('note').textContent = m.note || '';
     $('filters').hidden = S.tab !== 'cons';
-    $('count').textContent = rows.filter(r => !r.sub).length + ' linhas';
+    $('count').textContent = rows.length + ' linhas';
     if (S.tab === 'cic') renderCic();
   }
   /* ---------- aba Processos: resumo + gráficos (SVG) ---------- */
@@ -747,12 +742,12 @@ https://github.com/nodeca/pako/blob/main/LICENSE
       if (total) x.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFEEF2F9' } };
       if (COL[c.c]) { x.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF' + COL[c.c][0] } }; x.font = { ...x.font, color: { argb: 'FF' + COL[c.c][1] } }; if (c.k === 's') x.alignment = { horizontal: 'center', vertical: 'middle' }; }
     });
-    m.rows.forEach((cells, i) => put(hr + 1 + i, cells, false));
+    m.rows.forEach((cells, i) => put(hr + 1 + i, cells, !!cells.tot));
     const last = hr + m.rows.length;
     let fr = last + 1; [m.foot, m.foot2].forEach(f => { if (f) { put(fr, f, true); fr++; } });
     ws.columns.forEach((c, i) => { c.width = i === 0 ? 46 : m.rows[0] && m.rows[0][i] && m.rows[0][i].k === 's' && !m.rows[0][i].c ? 38 : m.head[i] && /Home Office|Folga/.test(m.head[i]) ? 16 : m.head[i] && /Qualificados|Gestor/.test(m.head[i]) && i < 4 ? 20 : 13; });
     ws.views = [{ state: 'frozen', xSplit: 1, ySplit: hr, topLeftCell: 'B' + (hr + 1) }];
-    if (m.rows.length) ws.autoFilter = { from: { row: hr, column: 1 }, to: { row: last, column: nc } };
+    if (m.rows.length && !m.grp) ws.autoFilter = { from: { row: hr, column: 1 }, to: { row: last, column: nc } };
     ws.headerFooter.oddFooter = '&L&A&RPágina &P de &N';
     ws.pageSetup.printTitlesRow = hr + ':' + hr;
     return ws;
