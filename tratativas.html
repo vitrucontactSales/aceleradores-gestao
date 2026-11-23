@@ -62,13 +62,13 @@ function abrirEd(id){alvo=id;const r=ALL.find(x=>String(x.id)===id);$('eQ').text
  $('eM').value='';$('eE').classList.add('hide');$('eML').textContent='Observação (justificativa da alteração)'+(me.perfil==='gestor'?' — obrigatória':'');
  const H=Edic.hist(id);$('eH').innerHTML=H.length?'<b>Histórico</b><br>'+H.slice().reverse().map(h=>`${dt(h.em.slice(0,10))} · ${esc(h.por)} · ${Object.keys(h.depois).map(k=>esc(k)+': '+esc(h.antes[k]||'—')+' → '+esc(h.depois[k]||'—')).join('; ')}${h.motivo?' · “'+esc(h.motivo)+'”':''}`).join('<br>'):'';
  $('ed').showModal()}
-const cmp=id=>Comp.get(id)?`<button class="lk" type="button" data-c="1" style="cursor:pointer;background:#ecfdf3;border-color:#abefc6;color:#085d3a" title="Ver o comprovante de pagamento">🧾 Comprovante</button>⟩:`<button class="lk" type="button" data-n="1" style="cursor:pointer;background:#fff;border-style:dashed;color:var(--mut)" title="Anexar o comprovante de pagamento">📎 sem comprovante</button>⟩;
+const cmp=id=>Comp.get(id)?`<button class="lk" type="button" data-c="1" style="cursor:pointer;background:#ecfdf3;border-color:#abefc6;color:#085d3a" title="Ver o comprovante de pagamento">🧾 Comprovante</button>`:`<button class="lk" type="button" data-n="1" style="cursor:pointer;background:#fff;border-style:dashed;color:var(--mut)" title="Anexar o comprovante de pagamento">📎 sem comprovante</button>`;
 const cf=document.createElement('input');cf.type='file';cf.accept='image/*,application/pdf';let ca=null;
 cf.onchange=async()=>{const f=cf.files[0];cf.value='';if(!f)return;try{Comp.salvar(ca,await Comp.ler(f),me.nome);m('Comprovante anexado.','ok');filtrar()}catch(x){m(x.message,'er')}};
 document.addEventListener('click',e=>{const b=e.target.closest('button[data-c],button[data-n]');if(!b)return;const id=b.closest('tr').dataset.id;
  if(b.dataset.n){ca=id;return cf.click()}
  const c=Comp.get(id),r=ALL.find(x=>String(x.id)===id);$('cQ').textContent=(r.consultor||'')+' · candidato '+(r.candidato||'—')+' · anexado por '+c.por+' em '+dt(c.em.slice(0,10));
- $('cV').innerHTML=c.url.startsWith('data:application/pdf')?`<iframe src="${c.url}" style="width:100%;height:70vh;border:0"></iframe>⟩:`<img src="${c.url}" alt="Comprovante de pagamento" style="max-width:100%;max-height:70vh;display:block;margin:auto">⟩;$('cD').showModal()});
+ $('cV').innerHTML=c.url.startsWith('data:application/pdf')?`<iframe src="${c.url}" style="width:100%;height:70vh;border:0"></iframe>`:`<img src="${c.url}" alt="Comprovante de pagamento" style="max-width:100%;max-height:70vh;display:block;margin:auto">`;$('cD').showModal()});
 $('eX').onclick=()=>$('ed').close();
 $('eOk').onclick=()=>{const r=ALL.find(x=>String(x.id)===alvo),n={},a={},mo=$('eM').value.trim(),er=t=>{$('eE').textContent=t;$('eE').classList.remove('hide')};
  document.querySelectorAll('#eF input').forEach(i=>{const v=i.value.trim();if(v!==val(r,i.dataset.k,i.type)){n[i.dataset.k]=v;a[i.dataset.k]=r[i.dataset.k]??''}});
