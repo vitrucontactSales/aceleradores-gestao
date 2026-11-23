@@ -104,7 +104,7 @@ header.menu .tag{font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;
   <section class="card" id="sec-arq" aria-labelledby="h-arq">
     <div class="arq" id="zDrop">
       <h2 id="h-arq">1. Arquivos base</h2>
-      <input class="vh" type="file" id="fArq" multiple><label class="btn" for="fArq">Escolher arquivos…</label> <button class="btn sec" type="button" id="btnSb">↻ Atualizar do banco</button> <button class="btn sec" type="button" id="btnPubCfg">💾 Salvar parâmetros para todos</button>
+      <input class="vh" type="file" id="fArq" multiple><label class="btn" for="fArq">Escolher arquivos…</label>
       <p class="hint" id="shInfo" role="status"></p>
       <p class="st" id="stAcel" role="status" aria-live="polite"><b>Acelerador:</b> aguardando…</p>
       <p class="st" id="stTopo" role="status" aria-live="polite"><b>Topo:</b> aguardando…</p>
@@ -271,9 +271,8 @@ header.menu .tag{font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;
     let c = null; try { c = JSON.parse(localStorage.getItem('vendas_cfg') || 'null'); } catch (e) {}
     $('alias').value = 'GUSTAVO CAZONI = GUSTAVO QUALHO CAZONI\nMARIA EDUARDA TOLEDO OLIVEIRA = MARIA EDUARDA TOLEDO DE OLIVEIRA'; $('fer').value = '02/11/2026'; $('jornada').value = JORNADA_DEF;
     buildCicInputs(); if (c) aplicarCfg(c);
-    [...CFG_IDS, ...CICLOS.flatMap(n => ['c' + n + 'i', 'c' + n + 'f'])].forEach(id => $(id).addEventListener('input', guardarLocal));
-    $('btnSb').addEventListener('click', () => atualizar(true));
-    $('btnPubCfg').addEventListener('click', () => publicar([['config', lerCfg()]]));
+    [...CFG_IDS, ...CICLOS.flatMap(n => ['c' + n + 'i', 'c' + n + 'f'])].forEach(id => $(id).addEventListener('input', () => { guardarLocal(); agendar(); }));
+    let tmr; const agendar = () => { clearTimeout(tmr); $('shInfo').textContent = 'Salvando parâmetros…'; tmr = setTimeout(() => publicar([['config', lerCfg()]]), 1500); }; // salva sozinho 1,5 s depois da última edição
     const a = await IDB.get('atend').catch(() => null); if (a) { S.atend = a.rows; status('stAtend', `✓ ${a.rows.length.toLocaleString('pt-BR')} atendimentos · só neste computador (${quando(a.em)})`, true); }
     await atualizar(!c);
   });
