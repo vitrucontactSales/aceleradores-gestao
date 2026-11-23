@@ -502,7 +502,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
   }
   function fillMd() { // opções de semana e mês a partir das datas existentes nos arquivos
     const ds = []; if (S.acel) for (const r of S.acel) ds.push(r.date); if (S.topo) for (const r of S.topo) if (r.mat && r.date) ds.push(r.date);
-    if (!ds.length) return; ds.sort(); const mn = ds[0], mx = ds[ds.length - 1]; S.mdMin = mn; S.mdMax = mx; const si = Number($('semIni').value);
+    if (!ds.length) return; ds.sort(); const P0 = (S.p && Core.isKey(S.p.ini) && Core.isKey(S.p.fim)) ? S.p : null; let mn = ds[0], mx = ds[ds.length - 1]; if (P0) { if (mn < P0.ini) mn = P0.ini; if (mx > P0.fim) mx = P0.fim; if (mn > mx) { mn = P0.ini; mx = P0.fim; } } // o período/processo escolhido prevalece S.mdMin = mn; S.mdMax = mx; const si = Number($('semIni').value);
     const ms = [], ws = []; for (let m = mn.slice(0, 7); m <= mx.slice(0, 7); m = Core.addDays(m + '-28', 5).slice(0, 7)) ms.push(m);
     for (let s = Core.addDays(mn, -((Core.dow(mn) - si + 7) % 7)); s <= mx; s = Core.addDays(s, 7)) ws.push([s, Core.addDays(s, 6)]);
     const mes = n => ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'][Number(n.slice(5)) - 1] + '/' + n.slice(0, 4);
