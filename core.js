@@ -88,7 +88,7 @@ const Core = (() => {
     for (const r of mx.slice(h + 1)) {
       if (!r || r[ic] == null || r[ic] === '' || seen.has(String(r[ic]))) continue; seen.add(String(r[ic]));
       const d = dateKey(r[id]); if (!d) continue;
-      const por = norm(String(r[ip] ?? '').replace(/^\s*\d+\s+/, '')); rows.push({ date: d, nome: por === 'NAO REGISTRADO' || por === '' ? 'NAO REGISTRADO' : por });
+      const por = norm(String(r[ip] ?? '').replace(/^\s*\d+\s+/, '')); rows.push({ id: String(r[ic]), date: d, nome: por === 'NAO REGISTRADO' || por === '' ? 'NAO REGISTRADO' : por });
     }
     return rows;
   }
@@ -104,7 +104,7 @@ const Core = (() => {
     const rows = [];
     for (const r of mx.slice(h + 1)) {
       if (!r || r[ic] == null || r[ic] === '') continue; // pula linha de totais/vazias
-      rows.push({ nome: norm(r[inm]), qual: Number(r[iq]) === 1, mat: Number(r[im]) === 1, date: dateKey(r[id]), dq: idq >= 0 ? dateKey(r[idq]) : null });
+      rows.push({ id: String(r[ic]), nome: norm(r[inm]), qual: Number(r[iq]) === 1, mat: Number(r[im]) === 1, date: dateKey(r[id]), dq: idq >= 0 ? dateKey(r[idq]) : null });
     }
     return { rows, temDq: idq >= 0 };
   }
