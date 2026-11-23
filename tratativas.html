@@ -115,6 +115,6 @@ Auth.ready.then(async()=>{me=Auth.require(['gestor','admin']);topo(me,'tratativa
  const b=await Dados.base('real');ALL=b.rows.map((r,i)=>({...r,id:r.id??('amostra-'+i)}));const G={};ALL.forEach(r=>{if(r.consultor&&r.gestor)G[r.consultor]=r.gestor});
  ALL=ALL.concat(Dados.mat().map((r,i)=>({...r,id:r.id??('local-'+i),gestor:r.gestor||G[r.consultor]||''})));
  ALL=ALL.map(Edic.aplicar.bind(Edic));
- if(me.perfil==='gestor'){ALL=ALL.filter(r=>norm(r.gestor)===norm(me.nome));$('fg').parentElement.hidden=true}  // gestor vê só a própria equipe (no Supabase: RLS por gestor)
+ if(me.perfil==='gestor'){ALL=ALL.filter(r=>norm(r.gestor)===norm(gestorNome(me.nome)));$('fg').parentElement.hidden=true}  // gestor vê só a própria equipe (no Supabase: RLS por gestor)
  $('sub').textContent=(me.perfil==='gestor'?'Equipe de '+me.nome+' · ':'')+(b.fonte==='real'?'Fonte: banco real (somente leitura)':'Fonte: amostra local')+' · aprovação, CPF e matrícula ficam só neste navegador (o banco ainda não tem esses campos)';opcoes();filtrar()});
 </script></body></html>
