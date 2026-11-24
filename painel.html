@@ -181,6 +181,7 @@ header.menu .tag{font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;
         <button type="button" class="tab" role="tab" id="tab-cic" data-t="cic" aria-selected="false" aria-controls="painel" tabindex="-1">Processos</button>
         <button type="button" class="tab" role="tab" id="tab-cons" data-t="cons" aria-selected="true" aria-controls="painel">Consolidado</button>
         <button type="button" class="tab" role="tab" id="tab-md" data-t="md" aria-selected="false" aria-controls="painel" tabindex="-1">Média diária</button>
+        <button type="button" class="tab" role="tab" id="tab-mp" data-t="mp" aria-selected="false" aria-controls="painel" tabindex="-1">Meta do processo</button>
         <button type="button" class="tab" role="tab" id="tab-ges" data-t="ges" aria-selected="false" aria-controls="painel" tabindex="-1">Gestor</button>
         <button type="button" class="tab" role="tab" id="tab-sg" data-t="sg" aria-selected="false" aria-controls="painel" tabindex="-1">Sem gestor</button>
         <button type="button" class="tab" role="tab" id="tab-insc" data-t="insc" aria-selected="false" aria-controls="painel" tabindex="-1">Inscritos</button>
@@ -200,6 +201,9 @@ header.menu .tag{font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;
         </div>
         <div id="mdArea" hidden><div class="tools"><div><label for="mdVis">Ver por</label><select id="mdVis"><option value="dia">Dia</option><option value="sem">Semana</option><option value="mes" selected>Mês</option></select></div>
           <div hidden><label for="mdDia">Dia</label><input type="date" id="mdDia"></div><div hidden><label for="mdSem">Semana</label><select id="mdSem"></select></div><div><label for="mdMes">Mês</label><select id="mdMes"></select></div></div></div>
+        <div id="mpArea" hidden><div class="tools"><div><label for="mpProc">Processo</label><select id="mpProc"></select></div>
+          <div><label for="mpSim">Vendas por dia útil daqui para frente (opcional)</label><input type="text" id="mpSim" inputmode="decimal" placeholder="ex.: 3,5" autocomplete="off" style="width:130px"></div></div>
+          <p class="hint">Deixe o campo vazio para projetar com a média atual de cada consultor. Digite um valor (aceita vírgula, ex.: 3,5) para ver como a projeção e a situação mudam se todos venderem esse tanto por dia útil daqui em diante.</p></div>
         <div id="inscArea" hidden><div class="tools"><div><label for="inDia">Dia</label><input type="date" id="inDia"></div></div><p class="hint" id="inscInfo"></p></div>
         <div id="disArea" hidden>
           <p class="hint" id="disInfo"></p>
@@ -367,10 +371,10 @@ https://github.com/nodeca/pako/blob/main/LICENSE
   }
   function updateCicOptions() { // filtros listam só os processos com datas válidas, do mais novo para o mais antigo
     const ok = ciclos().filter(cicOk).sort((a, b) => (a.ini < b.ini ? 1 : -1)), h = new Date().toISOString().slice(0, 10);
-    ['fCiclo', 'cicSel'].forEach(id => {
+    ['fCiclo', 'cicSel', 'mpProc'].forEach(id => {
       const s = $(id); if (!s) return; const cur = s.value;
       s.replaceChildren(...(id === 'fCiclo' ? [new Option('Período manual', '')] : []), ...ok.map(c => new Option('Processo ' + c.n, c.n)));
-      if (ok.some(c => c.n === cur)) s.value = cur; else s.value = id === 'cicSel' ? ((ok.find(c => c.ini <= h && h <= c.fim) || ok.find(c => c.ini <= h) || ok[0] || { n: '' }).n) : '';
+      if (ok.some(c => c.n === cur)) s.value = cur; else s.value = id !== 'fCiclo' ? ((ok.find(c => c.ini <= h && h <= c.fim) || ok.find(c => c.ini <= h) || ok[0] || { n: '' }).n) : '';
     });
   }
   function applyCicloFilter() {
@@ -450,7 +454,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     const fl = [$('fGestor').value && 'gestor ' + $('fGestor').value, $('fCons').value && 'consultor ' + $('fCons').value, $('fEquipe').value && 'equipe ' + $('fEquipe').value].filter(Boolean);
     $('info').textContent = (fl.length ? 'FILTRADO: ' + fl.join(' + ') + ' · ' : '') + (sd ? `${sd} consultor(es) sem dados no período (listados com zero) · ` : '') + (r.excl.n ? `Excluídos por não terem gestor: ${r.excl.n} consultores, ${nf(r.excl.vendas)} vendas e ${nf(r.excl.qual)} qualificados · ` : '') + `Período ${dmy(S.p.ini)} a ${dmy(S.p.fim)} · ${r.nDays} dias úteis (seg-sáb, sem domingo e feriados)` +
       (t.foraDiasUteis ? ` · ${t.foraDiasUteis} venda(s) caíram em dia não útil (contam no total, não aparecem na aba Diário)` : '');
-    S.models = { md: mMedia(), sg: mSemGestor(), insc: mInscritos(), cons: mConsolidado(), sem: mSemanal(), dia: mDiario(), ges: mGestor(), cic: mCiclos() };
+    S.models = { md: mMedia(), sg: mSemGestor(), insc: mInscritos(), cons: mConsolidado(), sem: mSemanal(), dia: mDiario(), ges: mGestor(), cic: mCiclos(), mp: mMetaProc() };
     renderTab();
     renderConf();
   }
@@ -579,6 +583,22 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     const foot = [C('TOTAL'), C('')]; cs.forEach(c => { const t = c.v.totals; foot.push(N(t.tot), N(t.meta), P(t.pct), C('')); });
     return { head, rows, foot, groups, lead: 2, note: 'Processos com data inválida/vazia são ignorados. Meta do processo = dias úteis do processo inteiro (seg-sáb, sem domingo e feriados) × meta por dia, só para consultores com venda no processo.' };
   }
+  /* ---------- aba Meta do processo: meta por dia × dias úteis do processo inteiro; vendido, falta e ritmo necessário por consultor (vendas = Acelerador + Topo) ---------- */
+  function mMetaProc_() {
+    const c = getCic().find(x => String(x.n) === $('mpProc').value); if (!c || c.invalid) return null;
+    const v = c.v, h = hojeIso(), nDec = v.days.filter(d => d <= h).length, rest = v.nDays - nDec, md = S.p.metaDia, meta = v.metaPer, esp = md * nDec, inp = $('mpSim'),
+      tx = parseFloat(inp.value.trim().replace(',', '.')), usa = Number.isFinite(tx) && tx >= 0, d1 = x => x.toLocaleString('pt-BR', { maximumFractionDigits: 1 });
+    inp.setAttribute('aria-invalid', inp.value.trim() && !usa ? 'true' : 'false');
+    const f = r => { const falta = Math.max(0, meta - r.tot), media = nDec ? r.tot / nDec : 0, nec = rest ? falta / rest : null, proj = r.tot + (usa ? tx : media) * rest;
+      return { falta, media, nec, proj, st: proj >= meta ? 'ok' : rest && nec <= md + 1 ? 'mid' : 'bad' }; };
+    const sit = st => rest ? { ok: 'No caminho', mid: 'Atenção', bad: 'Em risco' }[st] : st === 'ok' ? 'Meta atingida' : 'Não atingiu';
+    const R = v.rows.map(r => ({ r, ...f(r) })), n = R.length, T = R.reduce((a, x) => a + x.r.tot, 0), F = R.reduce((a, x) => a + x.falta, 0), PJ = R.reduce((a, x) => a + x.proj, 0);
+    const rows = R.map(x => [C(x.r.chave), C(x.r.gestor || '(Sem gestor)'), N(x.r.tot, 'b'), N(meta), P(meta ? x.r.tot / meta : null), N(esp), N(x.r.tot - esp, x.r.tot >= esp ? 'ok' : 'bad'), N(x.falta),
+      C(x.media, d1(x.media), '', 'n'), C(x.nec, x.nec == null ? '—' : d1(x.nec), 'b', 'n'), N(Math.round(x.proj)), C(sit(x.st), null, x.st)]);
+    const foot = [C('TOTAL'), C(''), N(T), N(meta * n), P(meta * n ? T / (meta * n) : null), N(esp * n), N(T - esp * n, T >= esp * n ? 'ok' : 'bad'), N(F), C(n && nDec ? T / n / nDec : null, n && nDec ? d1(T / n / nDec) : '—', '', 'n'), C(n && rest ? F / n / rest : null, n && rest ? d1(F / n / rest) : '—', 'b', 'n'), N(Math.round(PJ)), C('')];
+    return { head: ['Consultor', 'Gestor', 'Vendido', 'Meta do processo', '% da meta', 'Esperado hoje', 'Saldo', 'Falta', 'Média atual (por dia útil)', 'Ritmo necessário (por dia útil)', 'Projeção', 'Situação'], rows, foot,
+      note: `Processo ${c.n}: ${nDec} de ${v.nDays} dias úteis decorridos, ${rest} restantes (seg-sáb, sem feriados) · meta ${md} por dia × ${v.nDays} = ${meta} por consultor · esperado hoje = ${md} × ${nDec} = ${esp} · ritmo necessário = falta ÷ dias úteis restantes · projeção = vendido + ${usa ? d1(tx) + ' por dia (valor digitado)' : 'média atual'} × ${rest} dias · Situação: verde se a projeção alcança a meta, amarelo se o ritmo necessário fica até 1 acima da meta por dia, vermelho acima disso · vendas = Acelerador + Topo.` };
+  }
   function mCicloResumo() {
     const cs = getCic().filter(c => !c.invalid);
     const head = ['Processo', 'Período', 'Dias úteis', 'Meta por consultor', 'Consultores ativos', 'Atingiram a meta', 'Vendas', 'Meta total', '% meta', 'Falta'];
@@ -600,7 +620,8 @@ https://github.com/nodeca/pako/blob/main/LICENSE
   const mInscritos = (...a) => jx(mInscritos_(...a));
   const mCiclos = (...a) => jx(mCiclos_(...a));
   const mAprov = (...a) => jx(mAprov_(...a));
-  const CAP = { ap: 'Aproveitamento: vendas ÷ atendimentos enviados, por consultor', md: 'Média de vendas por dia útil, por consultor (Acelerador + Topo)', sg: 'Consultores sem gestor e o peso deles no total de vendas', insc: 'Inscritos e vendas do dia, por consultor (Acelerador e Topo)', cic: 'Vendas, meta e situação por consultor em cada processo', cons: 'Consolidado por consultor (Acelerador + Topo)', sem: 'Vendas por semana, meta, Home Office e Folga', dia: 'Vendas por dia (verde = bateu a meta do dia)', ges: 'Resumo por gestor' };
+  const mMetaProc = (...a) => jx(mMetaProc_(...a));
+  const CAP = { mp: 'Meta do processo: vendido, o que falta e o ritmo necessário por consultor (Acelerador + Topo)', ap: 'Aproveitamento: vendas ÷ atendimentos enviados, por consultor', md: 'Média de vendas por dia útil, por consultor (Acelerador + Topo)', sg: 'Consultores sem gestor e o peso deles no total de vendas', insc: 'Inscritos e vendas do dia, por consultor (Acelerador e Topo)', cic: 'Vendas, meta e situação por consultor em cada processo', cons: 'Consolidado por consultor (Acelerador + Topo)', sem: 'Vendas por semana, meta, Home Office e Folga', dia: 'Vendas por dia (verde = bateu a meta do dia)', ges: 'Resumo por gestor' };
   function renderTab() {
     if (S.tab === 'dis') { renderDis(); return; }
     if (S.tab === 'insc') $('inscInfo').textContent = !S.insc ? 'Inscritos ainda não publicados no banco. Importe o relatório de inscrições (Candidato, Data Inscrição, Inscrito Por) na página Base de dados, em "Arquivos"; depois ele aparece aqui para todos.' : S.models.insc ? S.models.insc.note : 'Escolha o dia.';
@@ -1134,6 +1155,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     ['ini', 'fim'].forEach(id => $(id).addEventListener('change', () => { periodSet = true; $('fCiclo').value = ''; run(); }));
     ['mdVis', 'mdDia', 'mdSem', 'mdMes'].forEach(id => $(id).addEventListener('change', () => { const v = $('mdVis').value; $('mdDia').parentNode.hidden = v !== 'dia'; $('mdSem').parentNode.hidden = v !== 'sem'; $('mdMes').parentNode.hidden = v !== 'mes'; if (S.full) { S.models.md = mMedia(); renderTab(); } }));
     $('inDia').addEventListener('change', () => { if (S.full) { S.models.insc = mInscritos(); renderTab(); } });
+    ['mpProc', 'mpSim'].forEach(id => $(id).addEventListener(id === 'mpSim' ? 'input' : 'change', () => { if (S.full) { S.models.mp = mMetaProc(); renderTab(); } }));
     $('fCiclo').addEventListener('change', applyCicloFilter);
     $('cicSel').addEventListener('change', () => { if (S.res) { const cs = getCic().filter(c => !c.invalid); chartCons(cs); } });
     ['metaDia', 'ho', 'folga', 'semIni', 'fer', 'alias', 'jornada'].forEach(id => $(id).addEventListener('input', run));
@@ -1142,7 +1164,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     const tabs = [...document.querySelectorAll('.tab')];
     const sel = b => {
       S.tab = b.dataset.t; tabs.forEach(x => { const on = x === b; x.setAttribute('aria-selected', on); x.tabIndex = on ? 0 : -1; });
-      $('painel').setAttribute('aria-labelledby', b.id); $('cicArea').hidden = S.tab !== 'cic'; $('disArea').hidden = S.tab !== 'dis'; $('inscArea').hidden = S.tab !== 'insc'; $('mdArea').hidden = S.tab !== 'md'; const x = S.tab === 'conf' || S.tab === 'dis'; $('tblWrap').hidden = x; $('conf').hidden = S.tab !== 'conf';
+      $('painel').setAttribute('aria-labelledby', b.id); $('cicArea').hidden = S.tab !== 'cic'; $('disArea').hidden = S.tab !== 'dis'; $('inscArea').hidden = S.tab !== 'insc'; $('mdArea').hidden = S.tab !== 'md'; $('mpArea').hidden = S.tab !== 'mp'; const x = S.tab === 'conf' || S.tab === 'dis'; $('tblWrap').hidden = x; $('conf').hidden = S.tab !== 'conf';
       $('note').hidden = $('count').hidden = x; if (x) $('filters').hidden = true; if (S.tab !== 'conf') renderTab();
     };
     tabs.forEach((b, i) => {
