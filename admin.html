@@ -12,13 +12,13 @@
 <script src="auth.js"></script><script src="common.js"></script><script>
 let me,ADM;const $=i=>document.getElementById(i);
 const m=(t,c)=>$('msg').innerHTML=t?`<div class="msg ${c}">${esc(t)}</div>`:'';
-const PF=['consultor','gestor','admin'],ST=['pendente','ativo','bloqueado'];
-const sel=(id,v,ops)=>`<select data-id="${id}" data-k="${ops===PF?'perfil':'status'}">${ops.map(o=>`<option ${o===v?'selected':''}>${o}</option>`).join('')}</select>`;
+const PF=['consultor','supervisor','gestor','analista','gerente','admin'],ST=['pendente','ativo','bloqueado'];
+const sel=(id,v,ops)=>`<select data-id="${id}" data-k="${ops===PF?'perfil':'status'}">${(ops===PF?ops.filter(o=>o===v||Auth.gerencia(me,o)):ops).map(o=>`<option ${o===v?'selected':''}>${o}</option>`).join('')}</select>`;
 const del=u=>u.id!==me.id&&Auth.gerencia(me,u.perfil)?`<button class="sec" data-del="${u.id}" data-nome="${esc(u.nome)}">Excluir</button>`:'';
 function draw(){const us=Auth.listUsers(),p=us.filter(u=>u.status==='pendente');
  if(ADM)$('pend').innerHTML=p.length?`<table><tr><th>Nome</th><th>E-mail</th><th>Pediu</th><th>Perfil a conceder</th><th></th></tr>${p.map(u=>`<tr><td><input data-n="${u.id}" value="${esc(u.nome)}"></td><td>${esc(u.email)}</td><td>${u.perfil_solicitado||'—'}</td><td>${sel(u.id,u.perfil_solicitado==='admin'?'consultor':(u.perfil_solicitado||'consultor'),PF)}</td><td><button data-ok="${u.id}">Aprovar</button> <button class="sec" data-no="${u.id}">Bloquear</button> ${del(u)}</td></tr>`).join('')}</table>`:'<span class="mut">Nenhum cadastro pendente.</span>';
  const l=us.filter(u=>u.status!=='pendente');
- $('todos').innerHTML=`<table><tr><th>Nome</th><th>E-mail</th><th>Perfil</th><th>Status</th><th></th></tr>${l.map(u=>`<tr><td>${esc(u.nome)}</td><td>${esc(u.email)}</td><td>${ADM?sel(u.id,u.perfil,PF):u.perfil}</td><td>${ADM?sel(u.id,u.status,ST):u.status}</td><td>${del(u)}</td></tr>`).join('')||'<tr><td colspan="5" class="mut">Nenhum usuário.</td></tr>'}</table>`}
+ $('todos').innerHTML=`<table><tr><th>Nome</th><th>E-mail</th><th>Perfil</th><th>Status</th><th></th></tr>${l.map(u=>`<tr><td>${esc(u.nome)}</td><td>${esc(u.email)}</td><td>${ADM&&Auth.gerencia(me,u.perfil)?sel(u.id,u.perfil,PF):u.perfil}</td><td>${ADM&&Auth.gerencia(me,u.perfil)?sel(u.id,u.status,ST):u.status}</td><td>${del(u)}</td></tr>`).join('')||'<tr><td colspan="5" class="mut">Nenhum usuário.</td></tr>'}</table>`}
 async function run(f,ok){try{await f();m(ok||'Salvo.','ok')}catch(x){m(x.message,'er')}draw()}
 $('fNovo').onsubmit=e=>{e.preventDefault();run(async()=>{await Auth.createUser({nome:$('nNome').value,email:$('nEmail').value,senha:$('nSenha').value,perfil:$('nPerfil').value});$('fNovo').reset()},'Usuário cadastrado e já ativo.')};
 document.addEventListener('click',e=>{const t=e.target;
@@ -27,7 +27,7 @@ document.addEventListener('click',e=>{const t=e.target;
  if(t.dataset.del&&confirm('Excluir '+t.dataset.nome+'? O acesso é removido e isso não pode ser desfeito.'))run(()=>Auth.deleteUser(t.dataset.del),'Usuário excluído.')});
 document.addEventListener('change',e=>{const t=e.target;if(t.dataset.k&&!t.closest('#pend'))run(()=>Auth.setUser(t.dataset.id,{[t.dataset.k]:t.value}))});
 Auth.ready.then(()=>{me=Auth.require(['admin','gestor']);ADM=me.perfil==='admin';topo(me,'admin.html');
- $('nPerfil').innerHTML=(ADM?['consultor','gestor']:['consultor']).map(o=>`<option>${o}</option>`).join('');
+ $('nPerfil').innerHTML=PF.filter(o=>Auth.gerencia(me,o)).map(o=>`<option>${o}</option>`).join('');
  if(!ADM){$('cPend').hidden=true;$('tNovo').textContent='Cadastrar consultor';$('tTodos').textContent='Consultores';document.title='Consultores — Portal Aceleradores (protótipo)'}
  draw()});
 </script></body></html>
