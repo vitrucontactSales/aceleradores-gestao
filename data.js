@@ -32,11 +32,11 @@ const Dados={
     if(fonte==='real'){
       try{
         const sb=await this.sb(); let tudo=[],from=0;
-        while(true){const {data,error}=await sb.from('aceleradores_matriculas').select('id,consultor,candidato,registrado_em,gestor,polo,tipo_curso,data_pagamento,link_conversa').order('id').range(from,from+999);
+        while(true){const {data,error}=await sb.from('aceleradores_matriculas').select('id,consultor,candidato,registrado_em,gestor,polo,tipo_curso,data_pagamento,link_conversa').ilike('tipo_curso','Gradua%').order('id').range(from,from+999);
           if(error) throw error; tudo=tudo.concat(data||[]); if(!data||data.length<1000) break; from+=1000}
-        return {rows:tudo.map(r=>({...r,gestor:gestorNome(r.gestor)})),fonte:'real'};
-      }catch(e){return {rows:window.SAMPLE,fonte:'amostra',aviso:'Banco real indisponível ('+(e.message||e)+'). Mostrando amostra local.'}}
+        gestorAprender(tudo.map(r=>r.gestor));return {rows:tudo.map(r=>({...r,gestor:gestorNome(r.gestor)})).filter(r=>!gestorFora(r.gestor)),fonte:'real'};
+      }catch(e){return {rows:window.SAMPLE.filter(r=>!gestorFora(r.gestor)),fonte:'amostra',aviso:'Banco real indisponível ('+(e.message||e)+'). Mostrando amostra local.'}}
     }
-    return {rows:window.SAMPLE,fonte:'amostra'};
+    return {rows:window.SAMPLE.filter(r=>!gestorFora(r.gestor)),fonte:'amostra'};
   }
 };
