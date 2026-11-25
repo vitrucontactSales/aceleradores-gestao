@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Dashboard — Portal Aceleradores (protótipo)</title><link rel="stylesheet" href="common.css">
+<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Dashboard — Portal Aceleradores</title><link rel="stylesheet" href="common.css">
 <style>
 .pg-head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:22px}.pg-head p{margin:0;font-size:.88rem}
 .bar-f{display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap;padding:16px 18px;margin-bottom:20px}.bar-f>div{min-width:140px;flex:1}.bar-f label{margin-top:0}.bar-f input,.bar-f select,.seg button{height:42px;padding-top:0;padding-bottom:0}
@@ -39,7 +39,7 @@ details{margin-top:10px;font-size:.84rem}summary{cursor:pointer;color:var(--ac);
 <section class="card"><div class="ct"><h2>Evolução semanal</h2><span id="c2s"></span></div><div id="c2"></div></section>
 <section class="card"><div class="ct"><h2>Detalhamento por consultor</h2><span id="dtS"></span></div><div class="tbl-wrap"><table id="dt"></table></div></section>
 </main><div id="tip" role="tooltip"></div>
-<script src="auth.js"></script><script src="common.js"></script><script src="data.js"></script><script src="config.js"></script><script src="sample.js"></script><script src="processos.js"></script><script>
+<script src="auth.js"></script><script src="common.js"></script><script src="data.js"></script><script src="config.js"></script><script src="processos.js"></script><script>
 const $=id=>document.getElementById(id),nf=n=>n.toLocaleString('pt-BR'),nd=(n,d=1)=>n.toLocaleString('pt-BR',{minimumFractionDigits:d,maximumFractionDigits:d});
 const pad=n=>String(n).padStart(2,'0'),iso=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
 const fromIso=s=>{const [y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d)},addD=(d,n)=>{const x=new Date(d);x.setDate(x.getDate()+n);return x},diff=(a,b)=>Math.round((fromIso(b)-fromIso(a))/864e5);
@@ -120,11 +120,11 @@ $('fp').onchange=()=>{const v=$('fp').value;preset=v?'proc':'mes';document.query
 ['de','ate'].forEach(i=>$(i).onchange=()=>{preset='custom';$('fp').value='';document.querySelectorAll('[data-p]').forEach(x=>x.setAttribute('aria-pressed',false));desenhar()});
 $('fg').onchange=desenhar;$('fc').oninput=desenhar;$('fonte').onchange=carregar;$('atu').onclick=carregar;
 async function carregar(){$('msg').innerHTML='<div class="msg in">Carregando dados…</div>';const r=await Dados.base($('fonte').value);
- const mock=Dados.mat().filter(x=>!x.excluido_em).map(x=>({consultor:x.consultor,gestor:x.gestor,registrado_em:x.registrado_em,candidato:x.candidato}));
+ const mock=[];
  BASE=r.rows.concat(mock);FONTE=r.fonte;$('fonte').value=r.fonte;const gv=$('fg').value;
  $('fg').innerHTML='<option value="">Todos</option>'+[...new Set(BASE.map(x=>x.gestor).filter(Boolean))].sort().map(x=>`<option>${esc(x)}</option>`).join('');$('fg').value=gv;
  $('msg').innerHTML=r.aviso?`<div class="msg er">${esc(r.aviso)}</div>`:'';
- $('sub').textContent=`Fonte: ${r.fonte==='real'?'banco real (somente leitura)':'amostra local'} · ${nf(BASE.length)} registros na base${mock.length?` (${mock.length} do protótipo)`:''} · atualizado às ${new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}`;desenhar()}
+ $('sub').textContent=`Fonte: ${r.fonte==='real'?'banco protegido':'amostra local'} · ${nf(BASE.length)} registros na base · atualizado às ${new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}`;desenhar()}
 Auth.ready.then(async()=>{const u=Auth.require(['gestor','admin']);topo(u,'dashboard.html');await Proc.carregar();
  $('fp').innerHTML='<option value="">Todos / por período</option>'+Proc.C.map(c=>`<option value="${c.rot}">Processo ${c.rot}</option>`).join('');carregar();setInterval(()=>{if(!document.hidden)carregar()},5*60*1000)});
 </script></body></html>
