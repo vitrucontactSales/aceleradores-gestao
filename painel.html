@@ -1180,12 +1180,12 @@ https://github.com/nodeca/pako/blob/main/LICENSE
   document.addEventListener('DOMContentLoaded', init);
 
   /* ---------- Supabase: Acelerador direto do banco + acesso restrito a gestores ---------- */
-  const SB = window.supabase.createClient('https://wfequjtoutpqvfyjdrvo.supabase.co', 'sb_publishable_NYXnlMO9SZc4Sg3zxPCZtw_Uto0gecQ');
+  const SB = Auth.client;
   async function carregarAcelSupabase() {
     status('stAcel', 'carregando do banco…', true);
     const PAGE = 1000; let all = [], from = 0;
     for (;;) { // ordena por id (único) para a paginação não pular nem repetir linhas
-      const { data, error } = await SB.from('aceleradores_matriculas').select('consultor,registrado_em,gestor').ilike('tipo_curso', 'Gradua%').order('id').range(from, from + PAGE - 1);
+      const { data, error } = await SB.from('portal_matriculas').select('consultor,registrado_em,gestor').ilike('tipo_curso', 'Gradua%').order('id').range(from, from + PAGE - 1);
       if (error) throw error; all = all.concat(data); if (data.length < PAGE) break; from += PAGE;
     }
     gestorAprender(all.map(d => d.gestor));
@@ -1206,7 +1206,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
   const quando = iso => new Date(iso).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
   const meuNome = () => { try { return sessionStorage.getItem('painel_nome') || ''; } catch (e) { return ''; } } ;
   async function carregarCompartilhado() {
-    const { data, error } = await SB.from('painel_dados').select('chave,valor,atualizado_por,atualizado_em');
+    const { data, error } = await SB.from('portal_painel_dados').select('chave,valor,atualizado_por,atualizado_em');
     if (error) { $('shInfo').textContent = 'Parâmetros/Topo compartilhados indisponíveis: ' + error.message; return; }
     const m = Object.fromEntries(data.map(d => [d.chave, d]));
     if (m.config && m.config.atualizado_em !== S.cfgVer) { S.cfgVer = m.config.atualizado_em; aplicarCfg(m.config.valor); S.cfgTxt = `Parâmetros: salvos por ${m.config.atualizado_por || '?'} em ${quando(m.config.atualizado_em)}`; }
@@ -1236,7 +1236,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     $('shInfo').textContent = `${S.cfgTxt} · banco lido às ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
   }
   async function publicar(chave, valor) {
-    const { error } = await SB.from('painel_dados').upsert({ chave, valor, atualizado_por: meuNome() || 'gestor', atualizado_em: new Date().toISOString() });
+    const { error } = await SB.from('portal_painel_dados').upsert({ chave, valor, atualizado_por: meuNome() || 'gestor', atualizado_em: new Date().toISOString() });
     if (error) { $('stGeral').textContent = 'Não foi possível publicar: ' + error.message; return false; }
     S.cfgVer = S.topoVer = null; await atualizarTudo(); return true;
   }
