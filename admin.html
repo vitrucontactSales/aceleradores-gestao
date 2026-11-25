@@ -7,6 +7,10 @@
 <div><label for="nSenha">Senha provisória (mín. 8)</label><input id="nSenha" type="text" minlength="8" required autocomplete="off"></div>
 <div><label for="nPerfil">Perfil</label><select id="nPerfil"></select></div>
 <div><button type="submit">Cadastrar</button></div></form></div>
+<div class="card" id="cConv" hidden><h1>Convites de acesso</h1>
+<div style="display:flex;gap:12px;flex-wrap:wrap;align-items:end"><div><label for="cvB">Plataforma</label><select id="cvB"><option>UNICESUMAR-EAD</option><option>UNICESUMAR-PRESENCIAL</option><option>UNIASSELVI</option></select></div><div id="cvInfo" class="mut"></div></div>
+<p class="mut" style="font-size:.85rem">O e-mail abre no seu programa de e-mail, já preenchido; você revisa e clica em enviar. Cada pessoa cria a senha em <b>Criar cadastro</b>, com o e-mail abaixo (nome e perfil já ficam configurados).</p>
+<p id="cvLotes"></p><div id="conv"></div></div>
 <div class="card" id="cPend"><h1>Cadastros pendentes</h1><div id="pend"></div></div>
 <div class="card"><h1 id="tTodos">Todos os usuários</h1><div id="todos"></div></div></main>
 <script src="auth.js"></script><script src="common.js"></script><script>
@@ -18,16 +22,30 @@ const del=u=>u.id!==me.id&&Auth.gerencia(me,u.perfil)?`<button class="sec" data-
 async function draw(){let us;try{us=await Auth.listUsers()}catch(x){return m(x.message,'er')}const p=us.filter(u=>u.status==='pendente');
  if(ADM)$('pend').innerHTML=p.length?`<table><tr><th>Nome</th><th>E-mail</th><th>Pediu</th><th>Perfil a conceder</th><th></th></tr>${p.map(u=>`<tr><td><input data-n="${u.id}" value="${esc(u.nome)}"></td><td>${esc(u.email)}</td><td>${u.perfil_solicitado||'—'}</td><td>${sel(u.id,u.perfil_solicitado==='admin'?'consultor':(u.perfil_solicitado||'consultor'),PF)}</td><td><button data-ok="${u.id}">Aprovar</button> <button class="sec" data-no="${u.id}">Bloquear</button> ${del(u)}</td></tr>`).join('')}</table>`:'<span class="mut">Nenhum cadastro pendente.</span>';
  const l=us.filter(u=>u.status!=='pendente');
- $('todos').innerHTML=`<table><tr><th>Nome</th><th>E-mail</th><th>Perfil</th><th>Status</th><th></th></tr>${l.map(u=>`<tr><td>${esc(u.nome)}</td><td>${esc(u.email)}</td><td>${ADM&&Auth.gerencia(me,u.perfil)?sel(u.id,u.perfil,PF):u.perfil}</td><td>${ADM&&Auth.gerencia(me,u.perfil)?sel(u.id,u.status,ST):u.status}</td><td>${del(u)}</td></tr>`).join('')||'<tr><td colspan="5" class="mut">Nenhum usuário.</td></tr>'}</table>`}
+ $('todos').innerHTML=`<table><tr><th>Nome</th><th>E-mail</th><th>Perfil</th><th>Status</th><th></th></tr>${l.map(u=>`<tr><td>${esc(u.nome)}</td><td>${esc(u.email)}</td><td>${ADM&&Auth.gerencia(me,u.perfil)?sel(u.id,u.perfil,PF):u.perfil}</td><td>${ADM&&Auth.gerencia(me,u.perfil)?sel(u.id,u.status,ST):u.status}</td><td>${del(u)}</td></tr>`).join('')||'<tr><td colspan="5" class="mut">Nenhum usuário.</td></tr>'}</table>`;if(ADM)await drawConv(us)}
+let CV=[];const LINK=location.href.replace(/[^/]*$/,'login.html').split('?')[0],dm=d=>new Date(d).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}),
+ corpo=(n,e)=>`Olá${n?', '+n.split(' ')[0]:''}!\n\nSeu acesso ao Portal Aceleradores já está preparado.\n\n1) Abra: ${LINK}\n2) Clique em "Criar cadastro"\n3) Informe ${e?'este e-mail ('+e+') e o nome '+n:'o seu e-mail corporativo e o seu nome completo'}\n4) Crie uma senha com no mínimo 8 caracteres\n\nDepois é só entrar com o e-mail e a senha. Seu perfil já está definido${e?'':' no portal'}; alguns perfis são liberados após a aprovação do administrador.\n\nQualquer dúvida, é só responder este e-mail.`,
+ ASSU='Acesso ao Portal Aceleradores',mt=(para,bcc,n,e)=>'mailto:'+encodeURIComponent(para||'').replace('%40','@')+'?'+(bcc?'bcc='+bcc.map(x=>x).join(',')+'&':'')+'subject='+encodeURIComponent(ASSU)+'&body='+encodeURIComponent(corpo(n,e));
+async function drawConv(us){try{CV=await Auth.listConvites()}catch(x){return $('conv').innerHTML='<span class="mut">'+esc(x.message)+'</span>'}
+ const b=$('cvB').value,reg=new Set(us.map(u=>u.email)),L=CV.filter(c=>c.bandeira===b||c.bandeira==='TODAS'),st=c=>reg.has(c.email)?'Cadastrado':c.convidado_em?'Convite aberto em '+dm(c.convidado_em):'Não enviado',
+ pend=L.filter(c=>!reg.has(c.email)&&!c.convidado_em);
+ $('cvInfo').textContent=`${L.length} pessoas · ${L.filter(c=>reg.has(c.email)).length} cadastradas · ${pend.length} sem convite`;
+ const lotes=[];for(let i=0;i<pend.length;i+=40)lotes.push(pend.slice(i,i+40));
+ $('cvLotes').innerHTML=lotes.length?lotes.map((l,i)=>`<button data-lote="${i}">Enviar para todos os que faltam${lotes.length>1?' — lote '+(i+1)+' de '+lotes.length:''} (${l.length})</button>`).join(' '):'<span class="mut">Todos já receberam o convite.</span>';
+ $('cvLotes').dataset.l=JSON.stringify(lotes.map(l=>l.map(c=>c.email)));
+ $('conv').innerHTML=`<table><tr><th>Nome</th><th>E-mail</th><th>Perfil</th><th>Situação</th><th></th></tr>${L.map(c=>`<tr><td>${esc(c.nome)}</td><td>${esc(c.email)}</td><td>${esc(c.perfil)}</td><td>${st(c)}</td><td>${reg.has(c.email)?'':`<button class="sec" data-conv="${esc(c.email)}">${c.convidado_em?'Reenviar':'Enviar'}</button>`}</td></tr>`).join('')}</table>`}
 async function run(f,ok){try{await f();m(ok||'Salvo.','ok')}catch(x){m(x.message,'er')}await draw()}
+$('cvB').onchange=()=>draw();
 $('fNovo').onsubmit=e=>{e.preventDefault();run(async()=>{await Auth.createUser({nome:$('nNome').value,email:$('nEmail').value,senha:$('nSenha').value,perfil:$('nPerfil').value});$('fNovo').reset()},'Usuário cadastrado e já ativo.')};
-document.addEventListener('click',e=>{const t=e.target;
+document.addEventListener('click',async e=>{const t=e.target;
+ if(t.dataset.conv){const c=CV.find(x=>x.email===t.dataset.conv);location.href=mt(c.email,null,c.nome,c.email);await Auth.marcarConvites([c.email]).catch(x=>m(x.message,'er'));draw()}
+ if(t.dataset.lote){const l=JSON.parse($('cvLotes').dataset.l)[+t.dataset.lote];if(!confirm('Abrir o e-mail com '+l.length+' destinatários em cópia oculta?\nDepois de aberto, eles ficam marcados como "convite aberto".'))return;location.href=mt('',l,null,null);await Auth.marcarConvites(l).catch(x=>m(x.message,'er'));draw()}
  if(t.dataset.ok){const id=t.dataset.ok,tr=t.closest('tr');run(()=>Auth.setUser(id,{perfil:tr.querySelector('select').value,status:'ativo',nome:tr.querySelector('input').value}))}
  if(t.dataset.no)run(()=>Auth.setUser(t.dataset.no,{status:'bloqueado'}));
  if(t.dataset.del&&confirm('Excluir '+t.dataset.nome+'? O acesso é removido e isso não pode ser desfeito.'))run(()=>Auth.deleteUser(t.dataset.del),'Usuário excluído.')});
 document.addEventListener('change',e=>{const t=e.target;if(t.dataset.k&&!t.closest('#pend'))run(()=>Auth.setUser(t.dataset.id,{[t.dataset.k]:t.value}))});
 Auth.ready.then(()=>{me=Auth.require(['admin','gestor']);ADM=me.perfil==='admin';topo(me,'admin.html');
  $('nPerfil').innerHTML=PF.filter(o=>Auth.gerencia(me,o)).map(o=>`<option>${o}</option>`).join('');
- if(!ADM){$('cPend').hidden=true;$('tNovo').textContent='Cadastrar consultor';$('tTodos').textContent='Consultores';document.title='Consultores — Portal Aceleradores'}
+ $('cConv').hidden=!ADM;if(!ADM){$('cPend').hidden=true;$('tNovo').textContent='Cadastrar consultor';$('tTodos').textContent='Consultores';document.title='Consultores — Portal Aceleradores'}
  draw()});
 </script></body></html>
