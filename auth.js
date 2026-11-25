@@ -64,6 +64,8 @@ const Auth={
     const {data,error}=await c2.auth.signUp({email,password:senha,options:{data:{nome,perfil_solicitado:perfil}}});
     if(error) throw new Error(msg(error)); if(!data.user||!(data.user.identities||[]).length) throw new Error('Este e-mail já está cadastrado.');
     const r=await C.rpc('portal_set_user',{p_id:data.user.id,p_perfil:perfil,p_status:'ativo',p_nome:nome}); if(r.error) throw new Error(msg(r.error))},
+  async listConvites(){await this.ready;const {data,error}=await C.from('portal_convites').select('email,nome,perfil,bandeira,convidado_em').order('nome');if(error)throw new Error(msg(error));return data},
+  async marcarConvites(emails){await this.ready;const {error}=await C.from('portal_convites').update({convidado_em:new Date().toISOString(),convidado_por:this.current().id}).in('email',emails);if(error)throw new Error(msg(error))},
   async deleteUser(id){await this.ready;const r=await C.rpc('portal_del_user',{p_id:id}); if(r.error) throw new Error(msg(r.error))},
   async setUser(id,{perfil,status,nome}){await this.ready;const r=await C.rpc('portal_set_user',{p_id:id,p_perfil:perfil||null,p_status:status||null,p_nome:nome||null}); if(r.error) throw new Error(msg(r.error))}
 };
