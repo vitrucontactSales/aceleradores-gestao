@@ -164,6 +164,7 @@ const Core = (() => {
   }
   /* Candidato 2027 5xxxx = Graduação; o 5º dígito 4, 8 ou 9 = Ed. Continuada/Pós/Técnico (conferido no Acelerador). Pós nunca entra na conta; sem ID ('-') entra. */
   const POS = /^\d{4}[489]/;
+  const FORA = typeof GESTORES_FORA !== 'undefined' ? GESTORES_FORA : new Set(['Jhonatan Erik Ribeiro Dias']); // vem do common.js
   function compute(P) {
     const topo = P.topo.filter(r => !POS.test(r.id));
     const fer = new Set(P.feriados || []);
@@ -189,7 +190,7 @@ const Core = (() => {
     const sum = (m, a, b) => { let n = 0; for (const [d, v] of m) if (d >= a && d <= b) n += v; return n; };
     const nDays = days.length, metaPer = nDays * P.metaDia;
 
-    const rows = [];
+    let rows = [];
     for (const c of C.values()) {
       const ac = sum(c.ac, P.ini, P.fim), tp = sum(c.tp, P.ini, P.fim), tot = ac + tp;
       const qp = sum(c.qp, P.ini, P.fim);
@@ -203,6 +204,10 @@ const Core = (() => {
         faltaPot: Math.max(0, meta - tot - c.qual), _c: c });
     }
     rows.sort((a, b) => b.tot - a.tot || b.qual - a.qual || a.chave.localeCompare(b.chave));
+    /* Fora da base de cálculo, sempre: consultor sem gestor e gestores excluídos (forcar = já validados no período principal) */
+    const ok = r => (r.gestor && !FORA.has(r.gestor)) || (P.forcar && P.forcar.has(r.chave));
+    const fora = rows.filter(r => !ok(r)); rows = rows.filter(ok);
+    const excl = { n: fora.length, vendas: fora.reduce((a, r) => a + r.tot, 0), qual: fora.reduce((a, r) => a + r.qual, 0) };
 
     /* semanas (início configurável; padrão terça; domingo nunca conta) */
     let s = addDays(P.ini, -((dow(P.ini) - P.semanaInicio + 7) % 7));
@@ -228,13 +233,12 @@ const Core = (() => {
     const soTopo = [...un].map(([nome, n]) => ({ nome, n })).sort((a, b) => b.n - a.n);
 
     const vistos = new Set([...acelNames, ...topo.map(r => P.alias[r.nome] || r.nome)]), semArquivo = [...J.keys()].filter(k => !vistos.has(k)).sort();
-    return { rows, totals, weeks, days, nDays, metaPer, gestores, soTopo, semArquivo };
+    return { rows, totals, weeks, days, nDays, metaPer, gestores, soTopo, semArquivo, excl };
   }
   /* Filtro por gestor e/ou consultor: recalcula totais e resumo por gestor só com as linhas visíveis */
-  function view(res, fg, fc, hideNoG, fe) {
-    const rows = res.rows.filter(r => (!hideNoG || r.gestor || r.rost) && (!fg || (r.gestor || '(Sem gestor)') === fg) && (!fc || r.chave === fc) && (!fe || r.eq === fe));
-    const ex = hideNoG ? res.rows.filter(r => !r.gestor && !r.rost) : [];
-    return { ...res, rows, ...summarize(rows, res.totals.semCons), excl: { n: ex.length, vendas: ex.reduce((a, r) => a + r.tot, 0), qual: ex.reduce((a, r) => a + r.qual, 0) } };
+  function view(res, fg, fc, _hideNoG, fe) { // _hideNoG: sem uso (sem gestor já sai em compute)
+    const rows = res.rows.filter(r => (!fg || r.gestor === fg) && (!fc || r.chave === fc) && (!fe || r.eq === fe));
+    return { ...res, rows, ...summarize(rows, res.totals.semCons) };
   }
 
   return { equipe, parseJornada, parseInsc, parseAtend, distribuir, detectMatrix, matrixToObjs, isAceleradorTxt, norm, regToKey, parseAceleradorTxt, parseAceleradorObjs, parseTopoMatrix, compute, view, addDays, dow, ddmm, isKey, mk, toT };
