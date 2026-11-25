@@ -14,7 +14,7 @@
 <script src="auth.js"></script><script src="common.js"></script><script>
 Auth.ready.then(()=>{const u=Auth.require();topo(u,'index.html');document.getElementById('ola').textContent='Olá, '+u.nome.split(' ')[0];
 const C={formulario:['Registrar matrícula','Formulário de registro com validação do número do candidato.','formulario.html'],dash:['Dashboard','Visão consolidada por gestor e consultor.','dashboard.html'],trat:['Aprovações','Aprovar ou reprovar matrículas; CPF do aluno e matrícula.','tratativas.html'],painel:['Painel de Vendas','Acelerador + Topo, metas e ciclos.','painel.html'],adm:[u.perfil==='gestor'?'Consultores':'Usuários',u.perfil==='gestor'?'Cadastrar e excluir consultores.':'Cadastrar, aprovar e excluir usuários.','admin.html']};
-const v={consultor:['formulario'],gestor:['formulario','dash','painel','trat','adm'],admin:['formulario','dash','painel','trat','adm']}[u.perfil];
+const v={consultor:['formulario'],gestor:['formulario','dash','painel','trat','adm'],admin:['formulario','dash','painel','trat','adm']}[u.perfil].filter(k=>!u.ro||k==='dash'||k==='painel'||k==='trat');
 document.getElementById('cards').innerHTML=v.map(k=>`<a class="card" style="text-decoration:none;color:inherit" href="${C[k][2]}"><h2 style="color:var(--ac)">${C[k][0]}</h2><span class="mut">${C[k][1]}</span></a>`).join('')})
 </script><script>
 Auth.ready.then(async()=>{const u=Auth.require();if(u.perfil==='consultor')return;
