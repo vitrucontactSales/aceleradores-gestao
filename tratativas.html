@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Aprovações — Portal Aceleradores (protótipo)</title><link rel="stylesheet" href="common.css">
+<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Aprovações — Portal Aceleradores</title><link rel="stylesheet" href="common.css">
 <style>
 .bar-f{display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap;padding:16px 18px;margin-bottom:20px}.bar-f>div{min-width:140px;flex:1}.bar-f label{margin-top:0}.bar-f input,.bar-f select{height:42px}
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:20px}.kpi{background:var(--surf);border:1px solid var(--line);border-radius:var(--r);padding:16px 20px;border-top:3px solid var(--navy)}
@@ -32,7 +32,7 @@ dialog{border:1px solid var(--line);border-radius:var(--r);padding:22px;max-widt
 <dialog id="ed"><form onsubmit="return false"><h1>Editar registro</h1><p class="mut" id="eQ"></p><div id="eF"></div><label for="eM" id="eML">Observação (justificativa da alteração)</label><textarea id="eM" rows="2"></textarea><div class="msg er hide" id="eE"></div><div id="eH" class="mut"></div><div style="display:flex;gap:10px;justify-content:flex-end;margin-top:14px"><button class="sec" type="button" id="eX">Cancelar</button><button type="button" id="eOk">Salvar alteração</button></div></form></dialog>
 <dialog id="cD" style="max-width:760px"><h1>Comprovante de pagamento</h1><p class="mut" id="cQ"></p><div id="cV"></div><div style="text-align:right;margin-top:12px"><button class="sec" type="button" onclick="cD.close()">Fechar</button></div></dialog>
 <script src="vendor/exceljs.min.js"></script><script src="config.js"></script><script src="auth.js"></script><script src="common.js"></script><script src="data.js"></script>
-<script src="omni.js"></script><script src="sample.js"></script><script src="processos.js"></script><script>
+<script src="omni.js"></script><script src="processos.js"></script><script>
 const $=i=>document.getElementById(i),TAM=50,LAB={pendente:['p','⏳ Pendente'],aprovado:['a','✔ Aprovado'],reprovado:['r','✖ Reprovado']};
 let me,ALL=[],FIL=[],pag=0,alvo=null;
 const dig=s=>String(s||'').replace(/\D/g,''),norm=s=>String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
@@ -72,7 +72,7 @@ async function verDB(id){const l=CDB[id],r=ALL.find(x=>String(x.id)===id),sb=awa
  $('cV').innerHTML=(await Promise.all(l.map(async x=>{const {data}=await sb.storage.from('comprovantes').createSignedUrl(x.storage_path,600),u=data&&data.signedUrl;return u?`<p class="mut" style="margin:8px 0 4px">${esc(x.arquivo_nome||'')}</p>`+(x.mime==='application/pdf'?`<iframe src="${u}" style="width:100%;height:70vh;border:0"></iframe>`:`<img src="${u}" alt="Comprovante" style="max-width:100%;max-height:70vh;display:block;margin:auto">`):'<p class="mut">Arquivo indisponível.</p>'}))).join('')}
 const cmpL=id=>Comp.get(id)?`<button class="lk" type="button" data-c="1" style="cursor:pointer;background:#ecfdf3;border-color:#abefc6;color:#085d3a" title="Ver o comprovante de pagamento">🧾 Comprovante</button>`:`<button class="lk" type="button" data-n="1" style="cursor:pointer;background:#fff;border-style:dashed;color:var(--mut)" title="Anexar o comprovante de pagamento">📎 sem comprovante</button>`;
 const cf=document.createElement('input');cf.type='file';cf.accept='image/*,application/pdf';let ca=null;
-cf.onchange=async()=>{const f=cf.files[0];cf.value='';if(!f)return;try{Comp.salvar(ca,await Comp.ler(f),me.nome);m('Comprovante anexado.','ok');filtrar()}catch(x){m(x.message,'er')}};
+cf.onchange=async()=>{const f=cf.files[0];cf.value='';if(!f)return;try{const l=await Comp.salvar(ca,await Comp.ler(f),me.nome);(CDB[ca]=CDB[ca]||[]).push(l);m('Comprovante anexado.','ok');filtrar()}catch(x){m(x.message,'er')}};
 document.addEventListener('click',e=>{const b=e.target.closest('button[data-c],button[data-n]');if(!b)return;const id=b.closest('tr').dataset.id;
  if(CDB[id]&&b.dataset.c)return verDB(id);
  if(b.dataset.n){ca=id;return cf.click()}
@@ -84,7 +84,7 @@ $('eOk').onclick=()=>{const r=ALL.find(x=>String(x.id)===alvo),n={},a={},mo=$('e
  if(!Object.keys(n).length)return er('Nenhum campo foi alterado.');
  if(n.candidato!==undefined&&!CANDIDATO_OK(n.candidato))return er('Nº do candidato inválido: deve começar com o ano (2026, 2027…). Não use CPF.');
  if(me.perfil==='gestor'&&!mo)return er('Informe a observação justificando a alteração.');
- Edic.salvar(alvo,a,n,mo,me.nome);Object.assign(r,n,{editado:true});$('ed').close();m('Registro editado e alteração registrada no histórico.','ok');opcoes();filtrar()};
+ $('eOk').disabled=true;Edic.salvar(alvo,a,n,mo,me.nome).then(()=>{Object.assign(r,n,{editado:true});$('ed').close();m('Registro editado e alteração registrada no histórico.','ok');opcoes();filtrar()}).catch(x=>er(x.message)).finally(()=>$('eOk').disabled=false)};
 $('dlg').addEventListener('close',()=>{if($('dlg').returnValue==='ok'&&$('dM').value.trim())decidir(alvo,'reprovado',$('dM').value.trim())});
 document.addEventListener('change',e=>{const i=e.target;if(!i.dataset.f)return;const id=i.closest('tr').dataset.id;
  if(i.dataset.f==='cpf'){const v=dig(i.value);if(v&&!Trat.cpfOk(v)){i.classList.add('bad');m('CPF inválido — confira os 11 dígitos.','er');return}i.classList.remove('bad');m('');Trat.set(id,{cpf:v});i.value=Trat.mask(v)}
@@ -122,10 +122,10 @@ $('ant').onclick=()=>{pag--;desenhar()};$('prox').onclick=()=>{pag++;desenhar()}
 Auth.ready.then(async()=>{me=Auth.require(['gestor','admin']);topo(me,'tratativas.html');if(me.ro)document.body.classList.add('ro');await Proc.carregar();
  $('fp').innerHTML='<option value="">Todos</option>'+Proc.C.map(c=>`<option value="${c.n}">Processo ${c.rot}</option>`).join('');
  const b=await Dados.base('real');ALL=b.rows.map((r,i)=>({...r,id:r.id??('amostra-'+i)}));const G={};ALL.forEach(r=>{if(r.consultor&&r.gestor)G[r.consultor]=r.gestor});
- ALL=ALL.concat(Dados.mat().map((r,i)=>({...r,id:r.id??('local-'+i),gestor:r.gestor||G[r.consultor]||''})));
+ await Promise.all([Trat.load(),Edic.load()]).catch(x=>m('Não foi possível carregar aprovações: '+x.message,'er'));Trat.onerr=t=>m(t,'er');
  ALL=ALL.map(Edic.aplicar.bind(Edic));
- if(me.perfil==='gestor'){ALL=ALL.filter(r=>norm(r.gestor)===norm(gestorNome(me.nome)));$('fg').parentElement.hidden=true}  // gestor vê só a própria equipe (no Supabase: RLS por gestor)
- $('sub').textContent=(me.perfil==='gestor'?'Equipe de '+me.nome+' · ':'')+(b.fonte==='real'?'Fonte: banco real (somente leitura)':'Fonte: amostra local')+' · aprovação, CPF e matrícula ficam só neste navegador (o banco ainda não tem esses campos)';
+ if(me.perfil==='gestor'){$('fg').parentElement.hidden=true}  // o banco (RLS) já entrega só a equipe do gestor
+ $('sub').textContent=(me.perfil==='gestor'?'Equipe de '+me.nome+' · ':'')+'Fonte: banco protegido · aprovação, CPF e matrícula ficam gravados no banco';
  try{const sb=await Dados.sb();for(let o=0;;o+=1000){const{data,error}=await sb.from('aceleradores_comprovantes').select('registro_id,arquivo_nome,mime,storage_path,atendente_omni').order('extraido_em').range(o,o+999);if(error||!data.length)break;data.forEach(x=>(CDB[x.registro_id]=CDB[x.registro_id]||[]).push(x));if(data.length<1000)break}for(let o=0;;o+=1000){const{data,error}=await sb.from('aceleradores_comprovantes_varredura').select('registro_id,atendentes').order('registro_id').range(o,o+999);if(error||!data.length)break;data.forEach(x=>VDB[x.registro_id]=x.atendentes||'');if(data.length<1000)break}}catch(e){}
  opcoes();filtrar()});
 </script></body></html>
