@@ -1186,9 +1186,10 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     status('stAcel', 'carregando do banco…', true);
     const PAGE = 1000; let all = [], from = 0;
     for (;;) { // ordena por id (único) para a paginação não pular nem repetir linhas
-      const { data, error } = await SB.from('aceleradores_matriculas').select('consultor,registrado_em,gestor').order('id').range(from, from + PAGE - 1);
+      const { data, error } = await SB.from('aceleradores_matriculas').select('consultor,registrado_em,gestor').ilike('tipo_curso', 'Gradua%').order('id').range(from, from + PAGE - 1);
       if (error) throw error; all = all.concat(data); if (data.length < PAGE) break; from += PAGE;
     }
+    gestorAprender(all.map(d => d.gestor));
     const r = Core.parseAceleradorObjs(all.map(d => ({ 'CONSULTOR(A)': d.consultor, 'REGISTRADO EM': d.registrado_em, 'GESTOR': gestorNome(d.gestor) })));
     S.acel = r.rows; status('stAcel', `✓ ${r.rows.length.toLocaleString('pt-BR')} registros · banco (Supabase)` + (r.bad ? ` (${r.bad} ignorados)` : ''), true);
     autoPeriod(); run();
