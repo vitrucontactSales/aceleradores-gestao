@@ -1,5 +1,7 @@
 <!doctype html><meta charset="utf-8"><title>Coletor de comprovantes</title><script src="config.js"></script><script>
 // Receptor invisível: recebe do Omnichat (postMessage) os comprovantes e grava no Supabase. Só aceita mensagens de app.omni.chat.
+// Mantém a aba ativa: o Chrome congela abas em segundo plano; segurar um Web Lock e uma conexão evita isso.
+try{navigator.locks.request('coletor',()=>new Promise(()=>{}))}catch(e){}
 addEventListener('message',async ev=>{if(ev.origin!=='https://app.omni.chat')return;const d=ev.data||{},H={apikey:CFG.KEY,Authorization:'Bearer '+CFG.KEY},ack=o=>ev.source.postMessage({type:'ack',id:d.id,...o},ev.origin),R=p=>CFG.URL+'/rest/v1/'+p;
 try{
  if(d.type==='have'){const x=await(await fetch(R('aceleradores_comprovantes?select=id&registro_id=eq.'+encodeURIComponent(d.rec)),{headers:H})).json();return ack({have:x.length})}
