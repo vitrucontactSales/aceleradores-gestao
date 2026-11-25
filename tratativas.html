@@ -12,7 +12,7 @@ td .acts{display:flex;gap:6px;white-space:nowrap}td button{padding:5px 10px;font
 .lk{display:inline-block;margin-left:6px;padding:2px 9px;border-radius:999px;background:#eff4ff;border:1px solid #c7d7fe;color:var(--ac);font-size:.74rem;font-weight:650;text-decoration:none;white-space:nowrap}.lk:hover{background:var(--ac);color:#fff}
 #eF label{margin:8px 0 3px}#eH{font-size:.74rem;margin-top:12px;max-height:110px;overflow:auto}#ed{max-width:520px}
 dialog{border:1px solid var(--line);border-radius:var(--r);padding:22px;max-width:420px;width:92vw}dialog::backdrop{background:rgba(15,31,77,.35)}
-</style></head><body><main>
+.ro .acts{display:none}</style></head><body><main>
 <h1>Aprovação de matrículas</h1><p class="mut" id="sub">Carregando…</p><div id="msg"></div>
 <section class="card bar-f" aria-label="Filtros">
 <div><label for="fg">Gestor</label><select id="fg"><option value="">Todos</option></select></div>
@@ -54,12 +54,12 @@ function desenhar(){const T=Trat.todos(),n=FIL.length,cont={pendente:0,aprovado:
   <td><span class="st ${k}">${l}</span>${t.por?`<div class="mut" style="font-size:.72rem">${esc(t.por)} · ${dt((t.em||'').slice(0,10))}</div>`:''}${t.motivo?`<div class="mut" style="font-size:.72rem" title="${esc(t.motivo)}">Motivo: ${esc(t.motivo.slice(0,40))}</div>`:''}</td>
   <td><div class="acts"><button class="sec" data-e="1">✏️ Editar</button>${st!=='aprovado'?'<button class="ok" data-a="aprovado">Aprovar</button>':''}${st!=='reprovado'?'<button class="dg" data-a="reprovado">Reprovar</button>':''}${st!=='pendente'?'<button class="sec" data-a="pendente">Desfazer</button>':''}</div></td></tr>`}).join('')||'<tr><td colspan="8" class="mut" style="text-align:center;padding:30px">Nenhum registro encontrado.</td></tr>'}</tbody>`;
  $('pgI').textContent=n?`${pag*TAM+1}–${Math.min(n,pag*TAM+TAM)} de ${n.toLocaleString('pt-BR')}`:'';$('ant').disabled=pag<=0;$('prox').disabled=pag>=mx}
-function decidir(id,status,motivo){Trat.set(id,{status,motivo:motivo||'',por:me.nome,em:new Date().toISOString()});m(status==='pendente'?'Decisão desfeita.':'Registro '+status+'.','ok');filtrar()}
+function decidir(id,status,motivo){if(me.ro)return;Trat.set(id,{status,motivo:motivo||'',por:me.nome,em:new Date().toISOString()});m(status==='pendente'?'Decisão desfeita.':'Registro '+status+'.','ok');filtrar()}
 document.addEventListener('click',e=>{const be=e.target.closest('button[data-e]');if(be)return abrirEd(be.closest('tr').dataset.id);const b=e.target.closest('button[data-a]');if(!b)return;const id=b.closest('tr').dataset.id;
  if(b.dataset.a==='reprovado'){alvo=id;const r=ALL.find(x=>String(x.id)===id);$('dQ').textContent=(r.consultor||'')+' · candidato '+(r.candidato||'—');$('dM').value='';$('dlg').showModal()}else decidir(id,b.dataset.a)});
 const CAMPOS=[['consultor','Consultor'],['gestor','Gestor'],['candidato','Nº do candidato'],['data_pagamento','Data do pagamento','date'],['polo','Polo'],['tipo_curso','Tipo de curso'],['link_conversa','Link da conversa']],
  val=(r,k,t)=>String(r[k]??'').slice(0,t==='date'?10:9999);
-function abrirEd(id){alvo=id;const r=ALL.find(x=>String(x.id)===id);$('eQ').textContent=(r.consultor||'')+' · candidato '+(r.candidato||'—');
+function abrirEd(id){if(me.ro)return;alvo=id;const r=ALL.find(x=>String(x.id)===id);$('eQ').textContent=(r.consultor||'')+' · candidato '+(r.candidato||'—');
  $('eF').innerHTML=CAMPOS.map(([k,l,t])=>`<label>${l}</label><input data-k="${k}" type="${t||'text'}" value="${esc(val(r,k,t))}">`).join('');
  $('eM').value='';$('eE').classList.add('hide');$('eML').textContent='Observação (justificativa da alteração)'+(me.perfil==='gestor'?' — obrigatória':'');
  const H=Edic.hist(id);$('eH').innerHTML=H.length?'<b>Histórico</b><br>'+H.slice().reverse().map(h=>`${dt(h.em.slice(0,10))} · ${esc(h.por)} · ${Object.keys(h.depois).map(k=>esc(k)+': '+esc(h.antes[k]||'—')+' → '+esc(h.depois[k]||'—')).join('; ')}${h.motivo?' · “'+esc(h.motivo)+'”':''}`).join('<br>'):'';
@@ -119,7 +119,7 @@ async function exportar(){const T=Trat.todos(),W=new ExcelJS.Workbook(),NAVY='FF
  a.download='aprovacoes_'+hojeIso()+'.xlsx';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000)}
 $('xl').onclick=()=>{$('xl').disabled=true;exportar().then(()=>m(FIL.length.toLocaleString('pt-BR')+' registro(s) exportado(s).','ok')).catch(e=>m('Falha ao exportar: '+e.message,'er')).finally(()=>$('xl').disabled=false)};
 $('ant').onclick=()=>{pag--;desenhar()};$('prox').onclick=()=>{pag++;desenhar()};
-Auth.ready.then(async()=>{me=Auth.require(['gestor','admin']);topo(me,'tratativas.html');await Proc.carregar();
+Auth.ready.then(async()=>{me=Auth.require(['gestor','admin']);topo(me,'tratativas.html');if(me.ro)document.body.classList.add('ro');await Proc.carregar();
  $('fp').innerHTML='<option value="">Todos</option>'+Proc.C.map(c=>`<option value="${c.n}">Processo ${c.rot}</option>`).join('');
  const b=await Dados.base('real');ALL=b.rows.map((r,i)=>({...r,id:r.id??('amostra-'+i)}));const G={};ALL.forEach(r=>{if(r.consultor&&r.gestor)G[r.consultor]=r.gestor});
  ALL=ALL.concat(Dados.mat().map((r,i)=>({...r,id:r.id??('local-'+i),gestor:r.gestor||G[r.consultor]||''})));
