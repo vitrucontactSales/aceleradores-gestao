@@ -185,14 +185,14 @@ header.menu .tag{font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;
     const chave = tipo, stId = tipo === 'topo' ? 'stTopo' : 'stInsc';
     const mk = x => tipo === 'topo' ? { id: x.id, nome: x.nome, qual: x.qual, mat: x.mat, date: x.date, dq: x.dq } : { id: x.id, date: x.date, nome: x.nome }; // só estes campos: nada de CPF
     for (let tent = 0; ; tent++) { // trava otimista: só grava se ninguém alterou a base desde a leitura
-    const { data, error } = await SB.from('painel_dados').select('valor,atualizado_em').eq('chave', chave).maybeSingle(); if (error) throw error;
+    const { data, error } = await SB.from('portal_painel_dados').select('valor,atualizado_em').eq('chave', chave).maybeSingle(); if (error) throw error;
     const mapa = new Map(((data && data.valor.rows) || []).filter(x => x.id != null).map(x => [String(x.id), x]));
     let add = 0, upd = 0, igu = 0;
     for (const x of r.rows.map(mk)) { const k = String(x.id), a = mapa.get(k); if (!a) add++; else if (JSON.stringify(a) === JSON.stringify(x)) igu++; else upd++; mapa.set(k, x); } // mesmo id = mesma linha (a mais nova vence)
     const rows = [...mapa.values()];
     if (add || upd || !data) {
       const pl = { valor: tipo === 'topo' ? { rows, temDq: !!r.temDq } : { rows }, atualizado_por: meuNome() || 'gestor', atualizado_em: new Date().toISOString() };
-      const q = data ? SB.from('painel_dados').update(pl).eq('chave', chave).eq('atualizado_em', data.atualizado_em).select('chave') : SB.from('painel_dados').insert({ chave, ...pl }).select('chave');
+      const q = data ? SB.from('portal_painel_dados').update(pl).eq('chave', chave).eq('atualizado_em', data.atualizado_em).select('chave') : SB.from('portal_painel_dados').insert({ chave, ...pl }).select('chave');
       const { data: ok, error: e2 } = await q;
       if (e2 && !(e2.code === '23505' && !data)) throw new Error(/statement timeout/i.test(e2.message) ? 'tempo esgotado no banco; nada foi gravado, tente de novo' : e2.message);
       if (e2 || !ok.length) { if (tent >= 3) throw new Error('outra pessoa alterou a base ao mesmo tempo; nada foi gravado, reenvie o arquivo'); continue; }
@@ -264,14 +264,14 @@ header.menu .tag{font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;
   const guardarLocal = () => { try { const c = lerCfg(); localStorage.setItem('vendas_cfg', JSON.stringify(c)); localStorage.setItem('vendas_alias', c.alias); localStorage.setItem('vendas_fer', c.fer); localStorage.setItem('vendas_jornada', c.jornada); localStorage.setItem('vendas_ciclos_v2', JSON.stringify(c.ciclos)); } catch (e) {} };
   const JORNADA_DEF = "Celia de Souza Lima ; 08:00:00 ; 14:00:00\nNeide Dagues Costa ; 08:00:00 ; 14:00:00\nVanusa Silvino ; 18:00:00 ; 23:59:59\nTalita Araujo Dos Santos ; 08:00:00 ; 14:00:00\nBeatriz de Oliveira Xavier ; 08:00:00 ; 14:00:00\nAndreia Ferreira de Oliveira ; 18:00:00 ; 23:59:59\nWillyan Gabriel Lopes Moreira De Almeida ; 08:00:00 ; 14:00:00\nMarcos Vinícius Ferreira Fontes ; 15:00:00 ; 21:00:00\nJULIA CAROLINE DA SILVA PESSOA ; 14:00:00 ; 20:00:00\nJOYCE ANDRESSA DA SILVA VALENTINO ; 15:00:00 ; 21:00:00\nSTHEFANNY DAYANNE DA SILVA ROBERTO ; 14:00:00 ; 20:00:00\nLEANDRA SANTOS LORENZETTI ; 08:00:00 ; 14:00:00\nGustavo Qualho Cazoni ; 08:00:00 ; 14:00:00\nVICTOR KENDY KOZINA ; 14:00:00 ; 20:00:00\nLucas Brito Medeiros Da Silva ; 15:00:00 ; 21:00:00\nEmily Emanuelly de Souza ; 15:00:00 ; 21:00:00\nAlessandra Rosa Cabral ; 15:00:00 ; 21:00:00\nMaria Victoria Marques ; 08:00:00 ; 14:00:00\nJulya Amanda Almeida Silva ; 14:00:00 ; 20:00:00\nAna Claudia Monteiro De Vasconcelos ; 08:00:00 ; 14:00:00\nERICK ALEXSANDER NASCIMENTO DOS SANTOS ; 08:00:00 ; 14:00:00\nPedro Henrique Ribeiro dos Santos ; 14:00:00 ; 20:00:00\nCAROLINE SILVA SANTOS ; 14:00:00 ; 20:00:00\nFernanda Magioto ; 08:00:00 ; 14:00:00\nIngrid Kawane Ribeiro Moreira ; 08:00:00 ; 14:00:00\nThayssa Victoria da Silva Pereira ; 14:00:00 ; 20:00:00\nGLACIANE CRISTINA DA SILVA ; 08:00:00 ; 14:00:00\nMaria Eduarda Toledo de Oliveira ; 14:00:00 ; 20:00:00\nHenrique Caua Cupertino Navarro ; 14:00:00 ; 20:00:00\nSABRINA MANOELA DOS SANTOS LIMA ; 14:00:00 ; 20:00:00\nSarah da Silva Purnucena ; 08:00:00 ; 14:00:00\nRosa Caroline Benedito ; 08:00:00 ; 14:00:00\nGiovanna Cadide Cabral ; 08:00:00 ; 14:00:00\nJulie Ndinga Zeferino da Silva ; 08:00:00 ; 14:00:00\nTHAILA LORRAINE RODRIGUES CORDEIRO ; 14:00:00 ; 20:00:00";
 
-  /* ---------- banco (Supabase): painel_dados guarda config, topo e insc ---------- */
-  const SB = window.supabase.createClient('https://wfequjtoutpqvfyjdrvo.supabase.co', 'sb_publishable_NYXnlMO9SZc4Sg3zxPCZtw_Uto0gecQ');
+  /* ---------- banco (Supabase): portal_painel_dados guarda config, topo e insc ---------- */
+  const SB = Auth.client;
   async function atualizar(aplicar) {
     try {
-      const { count, error } = await SB.from('aceleradores_matriculas').select('id', { count: 'exact', head: true }); if (error) throw error;
+      const { count, error } = await SB.from('portal_matriculas').select('id', { count: 'exact', head: true }); if (error) throw error;
       status('stAcel', `✓ ${count.toLocaleString('pt-BR')} registros · banco (Supabase)`, true);
     } catch (e) { status('stAcel', 'erro ao ler o banco: ' + e.message, false); }
-    const { data, error } = await SB.from('painel_dados').select('chave,valor,atualizado_por,atualizado_em');
+    const { data, error } = await SB.from('portal_painel_dados').select('chave,valor,atualizado_por,atualizado_em');
     if (error) { $('shInfo').textContent = 'Dados compartilhados indisponíveis: ' + error.message; return; }
     const m = Object.fromEntries(data.map(d => [d.chave, d])), por = d => `enviado por ${d.atualizado_por || '?'} em ${quando(d.atualizado_em)}`;
     if (m.config && aplicar) aplicarCfg(m.config.valor);
@@ -281,7 +281,7 @@ header.menu .tag{font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;
   }
   async function publicar(itens) {
     for (const [chave, valor] of itens) {
-      const { error } = await SB.from('painel_dados').upsert({ chave, valor, atualizado_por: meuNome() || 'gestor', atualizado_em: new Date().toISOString() });
+      const { error } = await SB.from('portal_painel_dados').upsert({ chave, valor, atualizado_por: meuNome() || 'gestor', atualizado_em: new Date().toISOString() });
       if (error) { $('stGeral').textContent = `Não foi possível publicar "${chave}": ` + error.message; return false; }
     }
     $('stGeral').textContent = ''; await atualizar(false); return true;
