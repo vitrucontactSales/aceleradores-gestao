@@ -21,6 +21,8 @@ dialog{border:1px solid var(--line);border-radius:var(--r);padding:22px;max-widt
 <div><label for="cp">CPF do candidato</label><input id="cp" inputmode="numeric" placeholder="000.000.000-00" autocomplete="off"></div>
 <div><label for="mt">Matrícula</label><input id="mt" placeholder="Nº da matrícula" autocomplete="off"></div>
 <div><label for="fs">Situação</label><select id="fs"><option value="">Todas</option><option value="pendente">Pendente</option><option value="aprovado">Aprovado</option><option value="reprovado">Reprovado</option></select></div>
+<div><label for="fo">Omnichat</label><select id="fo" title="Confere o chat do registro com o relatório do Omnichat"><option value="">Todos</option><option value="o">✓ Venda no Omnichat</option><option value="x">⚠ Finalizada por outro</option><option value="s">✗ Chat sem venda</option><option value="f">? Sem finalizador</option><option value="n">Fora do relatório / sem link</option></select></div>
+<div><label for="fq">Comprovante</label><select id="fq"><option value="">Todos</option><option value="c">Com comprovante</option><option value="n">Sem comprovante</option></select></div>
 <div><label for="fp">Processo</label><select id="fp"><option value="">Todos</option></select></div>
 <div style="flex:0 0 auto;display:flex;gap:8px"><button class="sec" id="lim" type="button">Limpar</button><button id="xl" type="button">Exportar Excel (.xlsx)</button></div></section>
 <div class="kpis" id="kpis"></div>
@@ -38,9 +40,9 @@ const m=(t,c)=>$('msg').innerHTML=t?`<div class="msg ${c}">${esc(t)}</div>`:'';
 const dt=s=>s?s.slice(8,10)+'/'+s.slice(5,7)+'/'+s.slice(0,4):'';
 function opcoes(){const g=$('fg').value,gv=$('fg').value,c=$('fc').value,u=k=>[...new Set(ALL.filter(r=>k==='c'?(!gv||r.gestor===gv):true).map(r=>k==='g'?r.gestor:r.consultor).filter(Boolean))].sort((x,y)=>x.localeCompare(y,'pt'));
  const f=(id,l,v)=>{$(id).innerHTML='<option value="">Todos</option>'+l.map(x=>`<option${x===v?' selected':''}>${esc(x)}</option>`).join('')};f('fg',u('g'),g);f('fc',u('c'),u('c').includes(c)?c:'')}
-function filtrar(){const T=Trat.todos(),g=$('fg').value,co=$('fc').value,nc=dig($('nc').value),cp=dig($('cp').value),mt=norm($('mt').value.trim()),fs=$('fs').value,c=Proc.C.find(x=>String(x.n)===$('fp').value);
+function filtrar(){const T=Trat.todos(),g=$('fg').value,co=$('fc').value,nc=dig($('nc').value),cp=dig($('cp').value),mt=norm($('mt').value.trim()),fs=$('fs').value,fo=$('fo').value,fq=$('fq').value,c=Proc.C.find(x=>String(x.n)===$('fp').value);
  FIL=ALL.filter(r=>{const t=T[r.id]||{},st=t.status||'pendente',d=(r.data_pagamento||r.registrado_em||'').slice(0,10);
-  return(!fs||st===fs)&&(!c||(d>=c.ini&&d<=c.fim))&&(!g||r.gestor===g)&&(!co||r.consultor===co)&&(!nc||dig(r.candidato).includes(nc))&&(!cp||dig(t.cpf).includes(cp))&&(!mt||norm(t.matricula).includes(mt))});
+  return(!fs||st===fs)&&(!c||(d>=c.ini&&d<=c.fim))&&(!g||r.gestor===g)&&(!co||r.consultor===co)&&(!fo||ombK(r.link_conversa)===fo)&&(!fq||(fq==='c')===!!Comp.get(r.id))&&(!nc||dig(r.candidato).includes(nc))&&(!cp||dig(t.cpf).includes(cp))&&(!mt||norm(t.matricula).includes(mt))});
  FIL.sort((a,b)=>String(b.registrado_em).localeCompare(String(a.registrado_em)));desenhar()}
 function desenhar(){const T=Trat.todos(),n=FIL.length,cont={pendente:0,aprovado:0,reprovado:0};FIL.forEach(r=>cont[(T[r.id]||{}).status||'pendente']++);
  const mx=Math.max(0,Math.ceil(n/TAM)-1);pag=Math.min(pag,mx);
@@ -80,8 +82,8 @@ $('dlg').addEventListener('close',()=>{if($('dlg').returnValue==='ok'&&$('dM').v
 document.addEventListener('change',e=>{const i=e.target;if(!i.dataset.f)return;const id=i.closest('tr').dataset.id;
  if(i.dataset.f==='cpf'){const v=dig(i.value);if(v&&!Trat.cpfOk(v)){i.classList.add('bad');m('CPF inválido — confira os 11 dígitos.','er');return}i.classList.remove('bad');m('');Trat.set(id,{cpf:v});i.value=Trat.mask(v)}
  else{Trat.set(id,{matricula:i.value.trim()});i.value=i.value.trim()}});
-['nc','cp','mt'].forEach(i=>$(i).oninput=()=>{pag=0;filtrar()});$('fg').onchange=()=>{pag=0;opcoes();filtrar()};['fc','fs','fp'].forEach(i=>$(i).onchange=()=>{pag=0;filtrar()});
-$('lim').onclick=()=>{['nc','cp','mt','fg','fc','fs','fp'].forEach(i=>$(i).value='');pag=0;opcoes();filtrar()};
+['nc','cp','mt'].forEach(i=>$(i).oninput=()=>{pag=0;filtrar()});$('fg').onchange=()=>{pag=0;opcoes();filtrar()};['fc','fs','fp','fo','fq'].forEach(i=>$(i).onchange=()=>{pag=0;filtrar()});
+$('lim').onclick=()=>{['nc','cp','mt','fg','fc','fs','fp','fo','fq'].forEach(i=>$(i).value='');pag=0;opcoes();filtrar()};
 const U=v=>{const x=new Date(v);return v.length<=10?new Date(v+'T00:00:00Z'):new Date(Date.UTC(x.getFullYear(),x.getMonth(),x.getDate(),x.getHours(),x.getMinutes()))}; // Excel não tem fuso: grava a hora local como está
 async function exportar(){const T=Trat.todos(),W=new ExcelJS.Workbook(),NAVY='FF0F1F4D',agora=new Date();
  W.creator=me.nome;W.created=agora;
