@@ -620,6 +620,8 @@ https://github.com/nodeca/pako/blob/main/LICENSE
   const mCiclos = (...a) => jx(mCiclos_(...a));
   const mAprov = (...a) => jx(mAprov_(...a));
   const mMetaProc = (...a) => jx(mMetaProc_(...a));
+  const FONTE = { 'Acelerador': 'Acelerador (banco)', 'Topo': 'Topo (arquivo)', 'Total vendas': 'Acelerador + Topo', 'Qualificados': 'Topo (arquivo)', 'Qualificados no período': 'Topo · Data Qualificado', 'Qualificados (falta pagar)': 'Topo · qualificado sem matrícula, todas as datas',
+    'Potencial': 'calculado: vendas + falta pagar', 'Meta': 'calculado: parâmetros', '% meta': 'calculado', 'Falta': 'calculado' };
   const CAP = { mp: 'Meta do processo: vendido, o que falta e o ritmo necessário por consultor (Acelerador + Topo)', ap: 'Aproveitamento: vendas ÷ atendimentos enviados, por consultor', md: 'Média de vendas por dia útil, por consultor (Acelerador + Topo)', sg: 'Consultores sem gestor e o peso deles no total de vendas', insc: 'Inscritos e vendas do dia, por consultor (Acelerador e Topo)', cic: 'Vendas, meta e situação por consultor em cada processo', cons: 'Consolidado por consultor (Acelerador + Topo)', sem: 'Vendas por semana, meta, Home Office e Folga', dia: 'Vendas por dia (verde = bateu a meta do dia)', ges: 'Resumo por gestor' };
   function renderTab() {
     if (S.tab === 'dis') { renderDis(); return; }
@@ -639,7 +641,8 @@ https://github.com/nodeca/pako/blob/main/LICENSE
       const bt = el('button'); bt.type = 'button'; bt.textContent = parts[parts.length - 1] + (srt && srt.i === i ? (srt.d > 0 ? ' ▲' : ' ▼') : '');
       bt.title = 'Ordenar por esta coluna'; th.setAttribute('aria-sort', srt && srt.i === i ? (srt.d > 0 ? 'ascending' : 'descending') : 'none');
       bt.addEventListener('click', () => { S.sort[S.tab] = { i, d: srt && srt.i === i ? -srt.d : -1 }; renderTab(); });
-      th.append(bt); hr.append(th);
+      const sr = FONTE[parts[parts.length - 1]]; if (sr) { bt.title += ' · Fonte: ' + sr; const sp = el('span', '', sr); sp.style.cssText = 'display:block;font-weight:400;font-size:.68rem;text-transform:none;white-space:normal;line-height:1.2;opacity:.75'; th.append(bt, sp); } else th.append(bt);
+      hr.append(th);
     });
     thead.append(hr);
     const cell = (c, first) => { const e = first ? el('th', '', c.t) : el('td', clsOf(c) + (c.k === 's' ? (c.c ? ' ctr' : ' txt') : ''), c.t); if (first) e.scope = 'row'; return e; };
