@@ -172,7 +172,7 @@ header.menu .tag{font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;
         <div><label for="fGestor">Gestor</label><select id="fGestor"><option value="">Todos os gestores</option></select></div>
         <div><label for="fCons">Consultor</label><select id="fCons"><option value="">Todos os consultores</option></select></div>
         <div><label for="fEquipe">Equipe</label><select id="fEquipe"><option value="">Todas as equipes</option><option>Manhã</option><option>Tarde</option><option>Noite</option></select></div>
-        <div class="chk"><input type="checkbox" id="hideNoG" checked><label for="hideNoG" style="color:inherit;font-size:13px;margin:0">Ocultar consultores sem gestor</label></div>
+        <div class="chk" style="display:none"><input type="checkbox" id="hideNoG" checked><label for="hideNoG" style="color:inherit;font-size:13px;margin:0">Ocultar consultores sem gestor</label></div>
         <button type="button" class="btn sec" id="fLimpar">Limpar filtros</button>
       </form>
       <div class="bar" role="tablist" aria-label="Visões">
@@ -183,7 +183,6 @@ header.menu .tag{font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;
         <button type="button" class="tab" role="tab" id="tab-md" data-t="md" aria-selected="false" aria-controls="painel" tabindex="-1">Média diária</button>
         <button type="button" class="tab" role="tab" id="tab-mp" data-t="mp" aria-selected="false" aria-controls="painel" tabindex="-1">Meta do processo</button>
         <button type="button" class="tab" role="tab" id="tab-ges" data-t="ges" aria-selected="false" aria-controls="painel" tabindex="-1">Gestor</button>
-        <button type="button" class="tab" role="tab" id="tab-sg" data-t="sg" aria-selected="false" aria-controls="painel" tabindex="-1">Sem gestor</button>
         <button type="button" class="tab" role="tab" id="tab-insc" data-t="insc" aria-selected="false" aria-controls="painel" tabindex="-1">Inscritos</button>
         <button type="button" class="tab" role="tab" id="tab-dis" data-t="dis" aria-selected="false" aria-controls="painel" tabindex="-1">Distribuição</button>
         <button type="button" class="tab" role="tab" id="tab-conf" data-t="conf" aria-selected="false" aria-controls="painel" tabindex="-1">Conferência</button>
@@ -452,7 +451,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
       k('Potencial', nf(t.pot), `${pf(t.pctPot)} da meta · faltariam ${nf(t.faltaPot)}`));
     const sd = r.rows.filter(x => x.semDados).length;
     const fl = [$('fGestor').value && 'gestor ' + $('fGestor').value, $('fCons').value && 'consultor ' + $('fCons').value, $('fEquipe').value && 'equipe ' + $('fEquipe').value].filter(Boolean);
-    $('info').textContent = (fl.length ? 'FILTRADO: ' + fl.join(' + ') + ' · ' : '') + (sd ? `${sd} consultor(es) sem dados no período (listados com zero) · ` : '') + (r.excl.n ? `Excluídos por não terem gestor: ${r.excl.n} consultores, ${nf(r.excl.vendas)} vendas e ${nf(r.excl.qual)} qualificados · ` : '') + `Período ${dmy(S.p.ini)} a ${dmy(S.p.fim)} · ${r.nDays} dias úteis (seg-sáb, sem domingo e feriados)` +
+    $('info').textContent = (fl.length ? 'FILTRADO: ' + fl.join(' + ') + ' · ' : '') + (sd ? `${sd} consultor(es) sem dados no período (listados com zero) · ` : '') + (r.excl.n ? `Fora da base (sem gestor ou gestor Jhonatan): ${r.excl.n} consultores, ${nf(r.excl.vendas)} vendas e ${nf(r.excl.qual)} qualificados · ` : '') + `Período ${dmy(S.p.ini)} a ${dmy(S.p.fim)} · ${r.nDays} dias úteis (seg-sáb, sem domingo e feriados)` +
       (t.foraDiasUteis ? ` · ${t.foraDiasUteis} venda(s) caíram em dia não útil (contam no total, não aparecem na aba Diário)` : '');
     S.models = { md: mMedia(), sg: mSemGestor(), insc: mInscritos(), cons: mConsolidado(), sem: mSemanal(), dia: mDiario(), ges: mGestor(), cic: mCiclos(), mp: mMetaProc() };
     renderTab();
@@ -720,7 +719,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     const r = S.res, box = $('conf'); box.replaceChildren();
     const h = (t) => box.append(el('h3', '', t));
     h('Nomes do Topo que não existem no Acelerador (' + r.soTopo.length + ')');
-    if ($('hideNoG').checked) box.append(el('p', 'hint', 'Estes consultores não têm gestor e estão EXCLUÍDOS dos totais, das abas e da exportação (desmarque "Ocultar sem gestor" para incluí-los).'));
+    box.append(el('p', 'hint', 'Estes consultores não têm gestor (graduação) e estão EXCLUÍDOS dos totais, das abas e da exportação.'));
     box.append(el('p', 'hint', 'Entram como consultores próprios. Se algum for o mesmo consultor do Acelerador com grafia diferente, adicione em "Unificar nomes" (NOME NO TOPO = CHAVE DO ACELERADOR).'));
     const ul = el('ul'); r.soTopo.forEach(x => ul.append(el('li', '', `${x.nome} — ${x.n} candidato(s)`))); box.append(ul);
     if (r.totals.semCons.vendas || r.totals.semCons.qual) box.append(el('p', 'hint', `Topo sem consultor ("-"): ${r.totals.semCons.vendas} matrícula(s) no período e ${r.totals.semCons.qual} qualificado(s); fora dos totais.`));
