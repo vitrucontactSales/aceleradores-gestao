@@ -33,5 +33,8 @@ const gestorNome=n=>GESTOR_ALIAS[String(n||'').trim()]||n;
 /* aprende aliases sozinho: mesmo 1º e último nome, com todas as palavras do curto dentro do completo -> nome completo */
 function gestorAprender(nomes){const tk=n=>n.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').split(/\s+/),u=[...new Set(nomes.map(n=>String(n||'').trim()).filter(Boolean))];
   for(const c of u){const a=tk(c),l=u.filter(x=>{const t=tk(x);return t.length>a.length&&t[0]===a[0]&&t.at(-1)===a.at(-1)&&a.every(w=>t.includes(w))}).sort((x,y)=>y.length-x.length)[0];if(l)GESTOR_ALIAS[c]=l}}
+/* fora de TODO o projeto: gestor excluído e registro sem gestor */
+const GESTORES_FORA=new Set(['Jhonatan Erik Ribeiro Dias']);
+const gestorFora=g=>{const n=String(gestorNome(g||'')||'').trim();return !n||GESTORES_FORA.has(n)};
  
  
