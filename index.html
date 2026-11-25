@@ -28,10 +28,11 @@ const Q=new URLSearchParams(location.search).get('fonte'),FONTE=Q==='topo'||Q===
 let ds=[],f=0;
 if(FONTE!=='acel'){const nz=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().replace(/\s+/g,' ').trim();
 const tp=(await(await fetch(SB+'painel_dados?chave=eq.topo&select=valor',{headers:H})).json())[0].valor.rows,cn={},gm={};
-for(;;){const r=await fetch(SB+'aceleradores_matriculas?select=consultor,gestor&excluido_em=is.null',{headers:{...H,Range:f+'-'+(f+999)}});if(!r.ok)throw 0;const j=await r.json();j.forEach(x=>{const c=nz(x.consultor),g=gn(x.gestor);(cn[c]??={})[g]=(cn[c][g]||0)+1});if(j.length<1000)break;f+=1000}
+for(;;){const r=await fetch(SB+'aceleradores_matriculas?select=consultor,gestor&excluido_em=is.null&tipo_curso=ilike.Gradua*',{headers:{...H,Range:f+'-'+(f+999)}});if(!r.ok)throw 0;const j=await r.json();j.forEach(x=>{const c=nz(x.consultor),g=gn(x.gestor);(cn[c]??={})[g]=(cn[c][g]||0)+1});if(j.length<1000)break;f+=1000}
 for(const c in cn)gm[c]=Object.entries(cn[c]).sort((a,b)=>b[1]-a[1])[0][0];
-ds=ds.concat(tp.filter(x=>x.mat&&x.date>=P[0].ini&&x.date<=P[P.length-1].fim).map(x=>[x.date,gm[nz(x.nome)]||'Sem gestor']))}
-if(FONTE!=='topo'){f=0;for(;;){const r=await fetch(SB+'aceleradores_matriculas?select=data_pagamento,gestor&excluido_em=is.null&data_pagamento=gte.'+P[0].ini+'&data_pagamento=lte.'+P[P.length-1].fim,{headers:{...H,Range:f+'-'+(f+999)}});if(!r.ok)throw 0;const j=await r.json();ds=ds.concat(j.map(x=>[x.data_pagamento,gn(x.gestor)]));if(j.length<1000)break;f+=1000}}
+ds=ds.concat(tp.filter(x=>x.mat&&!/^\d{4}[489]/.test(x.id)&&x.date>=P[0].ini&&x.date<=P[P.length-1].fim).map(x=>[x.date,gm[nz(x.nome)]||'Sem gestor']))}
+if(FONTE!=='topo'){f=0;for(;;){const r=await fetch(SB+'aceleradores_matriculas?select=data_pagamento,gestor&excluido_em=is.null&tipo_curso=ilike.Gradua*&data_pagamento=gte.'+P[0].ini+'&data_pagamento=lte.'+P[P.length-1].fim,{headers:{...H,Range:f+'-'+(f+999)}});if(!r.ok)throw 0;const j=await r.json();ds=ds.concat(j.map(x=>[x.data_pagamento,gn(x.gestor)]));if(j.length<1000)break;f+=1000}}
+ds=ds.filter(([d,g])=>g!=='Sem gestor'&&!GESTORES_FORA.has(g)); // sem gestor e Jhonatan fora
 const cum=c=>{let a=0;return c.map(v=>a+=v)};
 P.forEach((p,i)=>{p.atual=hoje>=p.ini&&hoje<=p.fim;p.len=p.atual?idx(p.ini,hoje)+1:p.dias;p.c=new Array(p.len).fill(0);p.g={};ds.forEach(([d,g])=>{if(d>=p.ini&&d<=p.fim){const k=idx(p.ini,d);if(k<p.len){p.c[k]++;(p.g[g]=p.g[g]||new Array(p.len).fill(0))[k]++}}});p.a=cum(p.c);p.u=cum(Array.from({length:p.len},(_,k)=>{const d=new Date(U(p.ini)+k*864e5);return d.getUTCDay()===0||fer.has(d.toISOString().slice(0,10))?0:1}));p.col=p.atual?AZ:COR[i%COR.length]});
 const cur=P.find(p=>p.atual)||P[P.length-1],ant=P.filter(p=>p!==cur&&p.fim<cur.ini),sel=new Set(P.map(p=>p.n));
