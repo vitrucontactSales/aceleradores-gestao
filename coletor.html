@@ -1,0 +1,14 @@
+<!doctype html><meta charset="utf-8"><title>Coletor de comprovantes</title><script src="config.js"></script><script>
+// Receptor invisível: recebe do Omnichat (postMessage) os comprovantes e grava no Supabase. Só aceita mensagens de app.omni.chat.
+addEventListener('message',async ev=>{if(ev.origin!=='https://app.omni.chat')return;const d=ev.data||{},H={apikey:CFG.KEY,Authorization:'Bearer '+CFG.KEY},ack=o=>ev.source.postMessage({type:'ack',id:d.id,...o},ev.origin),R=p=>CFG.URL+'/rest/v1/'+p;
+try{
+ if(d.type==='have'){const x=await(await fetch(R('aceleradores_comprovantes?select=id&registro_id=eq.'+encodeURIComponent(d.rec)),{headers:H})).json();return ack({have:x.length})}
+ if(d.type==='todo'){const done=new Set();for(let o=0;;o+=1000){const r=await(await fetch(R('aceleradores_comprovantes_varredura?select=registro_id&order=registro_id&offset='+o+'&limit=1000'),{headers:H})).json();r.forEach(x=>done.add(x.registro_id));if(r.length<1000)break}
+  const out=[];for(let o=0;out.length<d.n&&o<12000;o+=1000){const r=await(await fetch(R('aceleradores_matriculas?select=id,link_conversa,consultor&excluido_em=is.null&link_conversa=like.*omni.chat*&order=registrado_em.desc,id&offset='+o+'&limit=1000'),{headers:H})).json();for(const x of r)if(!done.has(x.id)&&out.length<d.n)out.push(x);if(r.length<1000)break}
+  return ack({recs:out,feitos:done.size})}
+ if(d.type==='varr'){const i=await fetch(R('aceleradores_comprovantes_varredura?on_conflict=registro_id'),{method:'POST',headers:{...H,'Content-Type':'application/json',Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify(d.row)});if(!i.ok)throw Error('varr '+i.status);return ack({ok:1})}
+ if(d.type==='file'){const ext=d.mime.includes('pdf')?'pdf':d.mime.split('/')[1]||'bin',p=d.rec+'/'+crypto.randomUUID()+'.'+ext;
+  const u=await fetch(CFG.URL+'/storage/v1/object/comprovantes/'+p,{method:'POST',headers:{...H,'Content-Type':d.mime},body:new Blob([d.buf],{type:d.mime})});if(!u.ok)throw Error('upload '+u.status);
+  const i=await fetch(R('aceleradores_comprovantes'),{method:'POST',headers:{...H,'Content-Type':'application/json',Prefer:'return=minimal'},body:JSON.stringify({registro_id:d.rec,chat_id:d.chat,arquivo_nome:d.name,mime:d.mime,tamanho:d.buf.byteLength,storage_path:p,atendente_omni:d.atend})});if(!i.ok)throw Error('insert '+i.status);return ack({ok:1})}
+}catch(e){ack({err:String(e.message)})}});
+</script>
