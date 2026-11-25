@@ -71,7 +71,7 @@ const Core = (() => {
       const H = (mx[i] || []).map(norm), has = s => H.some(x => x.startsWith(s));
       if (H.includes('PRIORIDADE') && has('IDENTIFICADOR') && has('TELEFONE') && has('NOME COMPLETO')) return { tipo: 'atend', h: i };
       if (H.includes('CANDIDATO') && H.includes('DATA INSCRICAO') && has('INSCRITO POR')) return { tipo: 'insc', h: i };
-      if (H.includes('CANDIDATO') && has('QUALIFICADO') && has('MATRICULA')) return { tipo: 'topo', h: i };
+      if (H.includes('CANDIDATO') && has('MATRICULA') && (has('QUALIFICADO') || has('DATA PAGO'))) return { tipo: 'topo', h: i };
       if (has('CONSULTOR') && has('REGISTRADO EM')) return { tipo: 'acel', h: i };
     }
     return null;
@@ -98,13 +98,13 @@ const Core = (() => {
     if (h < 0) throw new Error('Cabeçalho do Topo não encontrado (coluna "Candidato").');
     const H = mx[h].map(norm);
     const col = f => H.findIndex(f);
-    const ic = col(x => x === 'CANDIDATO'), inm = col(x => x.startsWith('NOME')), iq = col(x => x === 'QUALIFICADO'),
+    const ic = col(x => x === 'CANDIDATO'), inm = [col(x => x.startsWith('NOME USUARIO')), col(x => x.startsWith('NOME'))].find(i => i >= 0) ?? -1, iq = col(x => x === 'QUALIFICADO'),
           im = col(x => x.startsWith('MATRICULA')), id = col(x => x.startsWith('DATA PAGO')), idq = col(x => x === 'DATA QUALIFICADO');
-    if ([inm, iq, im, id].some(i => i < 0)) throw new Error('Colunas esperadas no Topo: Nome Usuário, Qualificado, Matrícula, Data Pago RA.');
+    if ([inm, im, id].some(i => i < 0) || (iq < 0 && idq < 0)) throw new Error('Colunas esperadas no Topo: Nome Usuário, Qualificado (ou Data Qualificado), Matrícula, Data Pago RA.');
     const rows = [];
     for (const r of mx.slice(h + 1)) {
       if (!r || r[ic] == null || r[ic] === '') continue; // pula linha de totais/vazias
-      rows.push({ id: String(r[ic]), nome: norm(r[inm]), qual: Number(r[iq]) === 1, mat: Number(r[im]) === 1, date: dateKey(r[id]), dq: idq >= 0 ? dateKey(r[idq]) : null });
+      rows.push({ id: String(r[ic]), nome: norm(r[inm]), qual: iq >= 0 ? Number(r[iq]) === 1 : !!dateKey(r[idq]), mat: Number(r[im]) === 1, date: dateKey(r[id]), dq: idq >= 0 ? dateKey(r[idq]) : null });
     }
     return { rows, temDq: idq >= 0 };
   }
