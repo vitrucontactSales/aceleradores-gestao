@@ -30,5 +30,8 @@ const CANDIDATO_OK=v=>/^20(2[6-9]|[3-9]\d)/.test(v);
 /* mesmo gestor escrito de formas diferentes no banco -> um nome só (sempre o nome completo) */
 const GESTOR_ALIAS={'Clayton Santos':'Clayton Eugenio Ramos dos Santos','Rafael Pereira':'Rafael Marcos Pereira','Jhonatan Dias':'Jhonatan Erik Ribeiro Dias'};
 const gestorNome=n=>GESTOR_ALIAS[String(n||'').trim()]||n;
+/* aprende aliases sozinho: mesmo 1º e último nome, com todas as palavras do curto dentro do completo -> nome completo */
+function gestorAprender(nomes){const tk=n=>n.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').split(/\s+/),u=[...new Set(nomes.map(n=>String(n||'').trim()).filter(Boolean))];
+  for(const c of u){const a=tk(c),l=u.filter(x=>{const t=tk(x);return t.length>a.length&&t[0]===a[0]&&t.at(-1)===a.at(-1)&&a.every(w=>t.includes(w))}).sort((x,y)=>y.length-x.length)[0];if(l)GESTOR_ALIAS[c]=l}}
  
  
