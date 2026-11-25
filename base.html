@@ -98,7 +98,7 @@ header.menu b{margin-right:18px}header.menu .sp{flex:1}header.menu .mut{color:#b
 header.menu a{color:#c9d2ec;text-decoration:none;padding:17px 12px;font-size:.9rem;border-bottom:2px solid transparent}header.menu a:hover{color:#fff}header.menu a.on{color:#fff;border-bottom-color:#f2b84b}
 header.menu .tag{font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;padding:3px 8px;border-radius:3px;background:rgba(255,255,255,.12);color:#f2d28a}</style></head>
 </head>
-<body><script src="auth.js"></script><script src="common.js"></script><script>(function(){var u=Auth.current();if(!u||(u.perfil!=="gestor"&&u.perfil!=="admin")){location.replace(u?"index.html":"login.html");return}topo(u,"base.html");try{sessionStorage.setItem("dash_auth","1");sessionStorage.setItem("painel_nome",u.nome)}catch(e){}})()</script>
+<body><script src="auth.js"></script><script src="common.js"></script><script>(function(){var u=Auth.current();if(!u||u.ro||(u.perfil!=="gestor"&&u.perfil!=="admin")){location.replace(u?"index.html":"login.html");return}topo(u,"base.html");try{sessionStorage.setItem("dash_auth","1");sessionStorage.setItem("painel_nome",u.nome)}catch(e){}})()</script>
 <header class="topo"><h1>Base de dados — arquivos e parâmetros</h1><p>Esta página alimenta o Painel de Vendas, o Dashboard, Aprovações e a conferência com o Omnichat. O que for publicado aqui vale para todos os gestores.</p></header>
 <main>
   <section class="card" id="sec-arq" aria-labelledby="h-arq">
