@@ -58,7 +58,7 @@ const Core = (() => {
     for (const r of rows) {
       const date = regToKey(r.reg);
       if (!date) { bad++; continue; }
-      out.push({ chave: norm(r.consultor), date, gestor: r.gestor });
+      out.push({ chave: norm(r.consultor), date, gestor: typeof gestorNome === 'function' ? gestorNome(r.gestor) : r.gestor });
     }
     return { rows: out, bad };
   }
@@ -162,7 +162,10 @@ const Core = (() => {
     for (const l of String(txt || '').split('\n')) { const p = l.split(/[;\t]/), k = norm(p[0]), ent = hm(p[1]), sai = hm(p[2]); if (k && ent && sai) m.set(k, { ent, sai }); }
     return m;
   }
+  /* Candidato 2027 5xxxx = Graduação; o 5º dígito 4, 8 ou 9 = Ed. Continuada/Pós/Técnico (conferido no Acelerador). Pós nunca entra na conta; sem ID ('-') entra. */
+  const POS = /^\d{4}[489]/;
   function compute(P) {
+    const topo = P.topo.filter(r => !POS.test(r.id));
     const fer = new Set(P.feriados || []);
     const work = k => dow(k) !== 0 && !fer.has(k);
     const inP = k => k >= P.ini && k <= P.fim;
@@ -174,7 +177,7 @@ const Core = (() => {
     const inc = (m, k) => m.set(k, (m.get(k) || 0) + 1);
     for (const r of P.acel) { const c = get(r.chave); if (inP(r.date)) { inc(c.ac, r.date); if (r.gestor) inc(c.g, r.gestor); } if (r.gestor && (!c.last || r.date > c.last.d)) c.last = { d: r.date, g: r.gestor }; }
     let semConsAtivas = 0, semConsPend = 0;
-    for (const r of P.topo) {
+    for (const r of topo) {
       const k = P.alias[r.nome] || r.nome;
       if (k === '-' || k === '') { if (r.mat && r.date && inP(r.date)) semConsAtivas++; if (r.qual && !r.mat) semConsPend++; continue; }
       const c = get(k);
@@ -221,10 +224,10 @@ const Core = (() => {
 
     const acelNames = new Set(P.acel.map(r => r.chave));
     const un = new Map();
-    for (const r of P.topo) { const k = P.alias[r.nome] || r.nome; if (k !== '-' && !acelNames.has(k)) un.set(k, (un.get(k) || 0) + 1); }
+    for (const r of topo) { const k = P.alias[r.nome] || r.nome; if (k !== '-' && !acelNames.has(k)) un.set(k, (un.get(k) || 0) + 1); }
     const soTopo = [...un].map(([nome, n]) => ({ nome, n })).sort((a, b) => b.n - a.n);
 
-    const vistos = new Set([...acelNames, ...P.topo.map(r => P.alias[r.nome] || r.nome)]), semArquivo = [...J.keys()].filter(k => !vistos.has(k)).sort();
+    const vistos = new Set([...acelNames, ...topo.map(r => P.alias[r.nome] || r.nome)]), semArquivo = [...J.keys()].filter(k => !vistos.has(k)).sort();
     return { rows, totals, weeks, days, nDays, metaPer, gestores, soTopo, semArquivo };
   }
   /* Filtro por gestor e/ou consultor: recalcula totais e resumo por gestor só com as linhas visíveis */
